@@ -88,7 +88,7 @@ public class MahjongTableBlock extends Block {
                     // 디버그용 나중에 수정될 수 있음
                     buf.writeInt(4);
                     for(int seat=0;seat<4;seat++){
-                        List<Tile> seatDiscarded = finalGame.getDiscardedOfSeat(finalSeat);
+                        List<Tile> seatDiscarded = finalGame.getDiscardedOfSeat(seat);
                         buf.writeInt(seatDiscarded.size());
                         for(Tile tile : seatDiscarded) tile.writeToBuf(buf);
                     }

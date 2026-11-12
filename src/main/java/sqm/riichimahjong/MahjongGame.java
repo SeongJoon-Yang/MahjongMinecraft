@@ -1774,21 +1774,21 @@ public class MahjongGame {
         }
 
         // 뽑기 로직 실제 마작처럼 변경
-//        for(int i=0;i<3;i++){
-//            for(int seat=0;seat<4;seat++){
-//                int drawSeat = (seat + dealerSeat) % 4;
-//                for(int j=0;j<4;j++){
-//                    hands[drawSeat].add(wall.remove(0));
-//                }
-//            }
-//        }
-//        for(int seat=0;seat<4;seat++){
-//            int drawSeat = (seat + dealerSeat) % 4;
-//            hands[drawSeat].add(wall.remove(0));
-//        }
-//
-//        turnOrder = dealerSeat;
-//        drawTile(dealerSeat);
+        for(int i=0;i<3;i++){
+            for(int seat=0;seat<4;seat++){
+                int drawSeat = (seat + dealerSeat) % 4;
+                for(int j=0;j<4;j++){
+                    hands[drawSeat].add(wall.remove(0));
+                }
+            }
+        }
+        for(int seat=0;seat<4;seat++){
+            int drawSeat = (seat + dealerSeat) % 4;
+            hands[drawSeat].add(wall.remove(0));
+        }
+
+        turnOrder = dealerSeat;
+        drawTile(dealerSeat);
 
          // 손패 정리라서 순서를 오야부터 하지 않아도 됨
         for(int seat=0;seat<4;seat++){
@@ -1796,24 +1796,24 @@ public class MahjongGame {
         }
 
         // 테스트용
-        hand.add(new Tile(TileSuit.PIN, 2));
-        hand.add(new Tile(TileSuit.PIN, 3));
-        hand.add(new Tile(TileSuit.MAN, 1));
-        hand.add(new Tile(TileSuit.MAN, 1));
-        hand.add(new Tile(TileSuit.MAN, 2));
-        hand.add(new Tile(TileSuit.MAN, 2));
-        hand.add(new Tile(TileSuit.MAN, 3));
-        hand.add(new Tile(TileSuit.MAN, 3));
-        hand.add(new Tile(TileSuit.MAN, 4));
-        hand.add(new Tile(TileSuit.MAN, 4));
-        hand.add(new Tile(TileSuit.MAN, 5));
-        hand.add(new Tile(TileSuit.MAN, 5));
-        hand.add(new Tile(TileSuit.MAN, 6));
-        hand.add(new Tile(TileSuit.MAN, 6));
-        winningTile = new Tile(TileSuit.MAN, 6);
-        justDrew = true;
-        turnOrder = dealerSeat;
-        if(turnOrder != 0) hand.remove(hand.size()-1);
+//        hand.add(new Tile(TileSuit.PIN, 2));
+//        hand.add(new Tile(TileSuit.PIN, 3));
+//        hand.add(new Tile(TileSuit.MAN, 1));
+//        hand.add(new Tile(TileSuit.MAN, 1));
+//        hand.add(new Tile(TileSuit.MAN, 2));
+//        hand.add(new Tile(TileSuit.MAN, 2));
+//        hand.add(new Tile(TileSuit.MAN, 3));
+//        hand.add(new Tile(TileSuit.MAN, 3));
+//        hand.add(new Tile(TileSuit.MAN, 4));
+//        hand.add(new Tile(TileSuit.MAN, 4));
+//        hand.add(new Tile(TileSuit.MAN, 5));
+//        hand.add(new Tile(TileSuit.MAN, 5));
+//        hand.add(new Tile(TileSuit.MAN, 6));
+//        hand.add(new Tile(TileSuit.MAN, 6));
+//        winningTile = new Tile(TileSuit.MAN, 6);
+//        justDrew = true;
+//        turnOrder = dealerSeat;
+//        if(turnOrder != 0) hand.remove(hand.size()-1);
     }
 
     private List<List<List<Tile>>> getAllMeldDecompositions(List<Tile> tiles){

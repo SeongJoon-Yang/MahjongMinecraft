@@ -42,17 +42,17 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             new ResourceLocation("riichi-mahjong","textures/gui/info.png");
 
     private static final UUID[] DUMMY_UUIDS = {
-            null,
             UUID.fromString("00000000-0000-0000-0000-000000000001"),
             UUID.fromString("00000000-0000-0000-0000-000000000002"),
-            UUID.fromString("00000000-0000-0000-0000-000000000003")
+            UUID.fromString("00000000-0000-0000-0000-000000000003"),
+            UUID.fromString("00000000-0000-0000-0000-000000000004")
     };
 
     private static final String[] DUMMY_NAMES = {
-            "",
             "더미1",
             "더미2",
-            "더미3"
+            "더미3",
+            "더미4"
     };
 
     private static final long SCORE_APPLY_DELAY = 2000;   // 점수 반영
@@ -175,8 +175,8 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             int seatWindWidth = textW(seatWind[seat]);
 
             guiGraphics.fill(windX,windY,windX + windBox,windY + windBox,0xFF595A61);
-            guiGraphics.fill(windX + sx(1),windY + sx(1),windX + windBox - sx(1),windY + windBox - sx(1),seatWind.equals("동") ? 0xFFFF0000 : 0xFF000000);
-            drawTextAt(guiGraphics, seatWind[seat], windX + (windBox - seatWindWidth) / 2, windY + (windBox - sx(8)) / 2, seatWind.equals("동") ? 0x000000 : 0xFFFFFF);
+            guiGraphics.fill(windX + sx(1),windY + sx(1),windX + windBox - sx(1),windY + windBox - sx(1),seatWind[seat].equals("동") ? 0xFFFF0000 : 0xFF000000);
+            drawTextAt(guiGraphics, seatWind[seat], windX + (windBox - seatWindWidth) / 2, windY + (windBox - sx(8)) / 2, seatWind[seat].equals("동") ? 0x000000 : 0xFFFFFF);
 
             guiGraphics.pose().popPose();
         }

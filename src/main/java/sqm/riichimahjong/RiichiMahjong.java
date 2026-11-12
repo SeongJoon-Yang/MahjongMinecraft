@@ -53,7 +53,7 @@ public class RiichiMahjong implements ModInitializer {
 					if(discarded != null){
 						if(game.checkSuukaikanDraw()){
 							saveData.setDirty();
-							sendGameUpdate(player,game);
+							sendGameUpdateToAll(player,game);
 							return;
 						}
 
@@ -62,7 +62,7 @@ public class RiichiMahjong implements ModInitializer {
 						if(!callAvailable) {
 							game.clearCallState();
 							// 일단 여기서 사깡유국 생각할 것 같음
-							advanceDummyTurns(game, player, 0, false);
+							advanceDummyTurns(game, player, seat, false);
 						}
 
 						/*
@@ -76,13 +76,13 @@ public class RiichiMahjong implements ModInitializer {
 						if(canCallCount == 0){
 							game.clearCallState();
 							// 일단 여기서 사깡유국 생각할 것 같음
-							advanceDummyTurns(game, player, 0, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
+							advanceDummyTurns(game, player, seat, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
 						}
 						game.setCanCallCount(canCallCount);
 						*/
 
 						saveData.setDirty();
-						sendGameUpdate(player,game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 				saveData.setDirty();
@@ -103,7 +103,7 @@ public class RiichiMahjong implements ModInitializer {
 					if(success){
 						if(game.checkSuukaikanDraw()){
 							saveData.setDirty();
-							sendGameUpdate(player,game);
+							sendGameUpdateToAll(player,game);
 							return;
 						}
 
@@ -125,13 +125,13 @@ public class RiichiMahjong implements ModInitializer {
 						if(canCallCount == 0){
 							game.clearCallState();
 							// 일단 여기서 사깡유국 생각할 것 같음
-							advanceDummyTurns(game, player, 0, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
+							advanceDummyTurns(game, player, seat, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
 						}
 						game.setCanCallCount(canCallCount);
 						*/
 
 						saveData.setDirty();
-						sendGameUpdate(player,game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -153,7 +153,7 @@ public class RiichiMahjong implements ModInitializer {
 					if (success) {
 						game.clearCallState();
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -177,7 +177,7 @@ public class RiichiMahjong implements ModInitializer {
 					if (success) {
 						game.clearCallState();
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -196,7 +196,7 @@ public class RiichiMahjong implements ModInitializer {
 						checkWinAndNotify(player, game); // 링샨 드로우 후 영상개화 가능성 체크
 						game.clearCallState();
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -216,7 +216,7 @@ public class RiichiMahjong implements ModInitializer {
 						checkWinAndNotify(player, game);
 						game.clearCallState();
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -236,7 +236,7 @@ public class RiichiMahjong implements ModInitializer {
 						checkWinAndNotify(player, game);
 						game.clearCallState();
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -257,7 +257,7 @@ public class RiichiMahjong implements ModInitializer {
 						player.sendSystemMessage(Component.literal("부수: " + fu));
 						player.sendSystemMessage(Component.literal("역: " + String.join(", ", game.getYaku(seat))));
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -278,7 +278,7 @@ public class RiichiMahjong implements ModInitializer {
 						player.sendSystemMessage(Component.literal("부수: " + fu));
 						player.sendSystemMessage(Component.literal("역: " + String.join(", ", game.getYaku(seat))));
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -309,13 +309,13 @@ public class RiichiMahjong implements ModInitializer {
 						if(hasExternalCall){
 							if(game.checkSuukaikanDraw()){
 								saveData.setDirty();
-								sendGameUpdate(player, game);
+								sendGameUpdateToAll(player,game);
 								return;
 							}
 							advanceDummyTurns(game, player, seat, false);
 						}
 						saveData.setDirty();
-						sendGameUpdate(player, game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -351,7 +351,7 @@ public class RiichiMahjong implements ModInitializer {
 					advanceDummyTurns(game,player,seat, true);
 
 					savedData.setDirty();
-					sendGameUpdate(player,game);
+					sendGameUpdateToAll(player,game);
 				}else if(game.isMatchOver()){
 					RiichiMahjong.LOGGER.info("Match is over! minus score!");	// 토비 외의 경우가 있으면 바꿀 것!
 					for(int i=0;i<4;i++){
@@ -372,7 +372,7 @@ public class RiichiMahjong implements ModInitializer {
 					boolean success = game.declareKyuushuKyuuhai(seat);
 					if(success){
 						savedData.setDirty();
-						sendGameUpdate(player,game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -387,7 +387,7 @@ public class RiichiMahjong implements ModInitializer {
 					boolean success = game.startGame();
 					if(success){
 						savedData.setDirty();
-						sendGameUpdate(player,game);
+						sendGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -515,6 +515,16 @@ public class RiichiMahjong implements ModInitializer {
 		ServerPlayNetworking.send(player, ModPackets.UPDATE_HAND_PACKET, responseBuf);
 	}
 
+	private static void sendGameUpdateToAll(ServerPlayer actor, MahjongGame game){
+		if(!(actor.containerMenu instanceof MahjongMenu menu)) return;   // 마작 메뉴가 아니면 그냥 끝내기
+		BlockPos pos = menu.getTablePos();
+		for(ServerPlayer p : actor.server.getPlayerList().getPlayers()){
+			if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
+				sendGameUpdate(p, game);   // 안에서 받는 사람의 좌석으로 시점을 맞춰요
+			}
+		}
+	}
+
 	public static void checkWinAndNotify(net.minecraft.server.level.ServerPlayer player, MahjongGame game) {
 		int seat = game.getSeatOf(player.getUUID());
 		if (game.checkWinCondition(seat)) {
@@ -535,7 +545,7 @@ public class RiichiMahjong implements ModInitializer {
 			RiichiMahjong.LOGGER.info("seat : {}, humanseat : {}",seat, humanSeat);
 
 			if(game.isSeatAssigned(seat)){
-//				if(!skipDraw) game.drawTile(seat);	// 이렇게 써도 될 것 같긴 한데 이건 다인용일 테스트할 때 쓰는거로
+				if(!skipDraw) game.drawTile(seat);	// 이렇게 써도 될 것 같긴 한데 이건 다인용일 테스트할 때 쓰는거로
 				return;
 			}
 
