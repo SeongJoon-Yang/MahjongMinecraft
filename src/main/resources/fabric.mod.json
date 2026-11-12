@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "riichi-mahjong",
+	"version": "${version}",
+	"name": "Riichi Mahjong",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/riichi-mahjong/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"sqm.riichimahjong.RiichiMahjong"
+		],
+		"client": [
+			"sqm.riichimahjong.client.RiichiMahjongClient"
+		]
+	},
+	"mixins": [
+		"riichi-mahjong.mixins.json",
+		{
+			"config": "riichi-mahjong.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}

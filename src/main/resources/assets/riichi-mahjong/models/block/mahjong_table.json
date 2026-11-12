@@ -1,0 +1,75 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "riichi-mahjong:block/mahjong_table",
+    "table_top": "riichi-mahjong:block/mahjong_table_top",
+    "table_side": "riichi-mahjong:block/mahjong_table_side"
+  },
+  "elements": [
+    {
+      "name": "상판",
+      "from": [0, 10, 0],
+      "to": [16, 12, 16],
+      "faces": {
+        "up":    { "texture": "#table_top" },
+        "down":  { "texture": "#table_side" },
+        "north": { "texture": "#table_side" },
+        "south": { "texture": "#table_side" },
+        "east":  { "texture": "#table_side" },
+        "west":  { "texture": "#table_side" }
+      }
+    },
+    {
+      "name": "다리1",
+      "from": [1, 0, 1],
+      "to": [3, 10, 3],
+      "faces": {
+        "up":    { "texture": "#table_side" },
+        "down":  { "texture": "#table_side" },
+        "north": { "texture": "#table_side" },
+        "south": { "texture": "#table_side" },
+        "east":  { "texture": "#table_side" },
+        "west":  { "texture": "#table_side" }
+      }
+    },
+    {
+      "name": "다리2",
+      "from": [13, 0, 1],
+      "to": [15, 10, 3],
+      "faces": {
+        "up":    { "texture": "#table_side" },
+        "down":  { "texture": "#table_side" },
+        "north": { "texture": "#table_side" },
+        "south": { "texture": "#table_side" },
+        "east":  { "texture": "#table_side" },
+        "west":  { "texture": "#table_side" }
+      }
+    },
+    {
+      "name": "다리3",
+      "from": [1, 0, 13],
+      "to": [3, 10, 15],
+      "faces": {
+        "up":    { "texture": "#table_side" },
+        "down":  { "texture": "#table_side" },
+        "north": { "texture": "#table_side" },
+        "south": { "texture": "#table_side" },
+        "east":  { "texture": "#table_side" },
+        "west":  { "texture": "#table_side" }
+      }
+    },
+    {
+      "name": "다리4",
+      "from": [13, 0, 13],
+      "to": [15, 10, 15],
+      "faces": {
+        "up":    { "texture": "#table_side" },
+        "down":  { "texture": "#table_side" },
+        "north": { "texture": "#table_side" },
+        "south": { "texture": "#table_side" },
+        "east":  { "texture": "#table_side" },
+        "west":  { "texture": "#table_side" }
+      }
+    }
+  ]
+}
