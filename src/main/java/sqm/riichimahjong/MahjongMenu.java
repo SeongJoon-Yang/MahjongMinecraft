@@ -296,6 +296,8 @@ public class MahjongMenu extends AbstractContainerMenu {
 
     public int getMySeat() { return mySeat; }
 
+    public int getViewSeat() { return Math.max(mySeat, 0); }
+
     public UUID getSeatUuid(int seat) { return seatUuids[seat]; }
 
     public void setGameState(MahjongGame.GameState state) { this.state = state;}

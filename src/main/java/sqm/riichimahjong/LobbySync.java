@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class LobbySync {
     public static void broadcast(ServerLevel level, BlockPos pos, MahjongGame game){
-        if(game.getGameState() != MahjongGame.GameState.WAITING) return;
+        // if(game.getGameState() != MahjongGame.GameState.WAITING) return;     // 자원 절약용. 아마 앞으로 사용하지 않을 예정.
 
         for(ServerPlayer player : level.getServer().getPlayerList().getPlayers()){
             if(!(player.containerMenu instanceof MahjongMenu menu) || !menu.getTablePos().equals(pos)) continue;

@@ -148,7 +148,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
         MahjongGame.GameState state = this.menu.getGameState();
         List<Tile> hand = this.menu.getPlayerHand();
-        int mySeat = this.menu.getMySeat();
+        int mySeat = this.menu.getViewSeat();
 
         int size = sx(70);
         int tPanelX = px(128) - size / 2;
@@ -457,7 +457,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
     private ResourceLocation getNumberTexture(int number){
         return new ResourceLocation("riichi-mahjong","textures/gui/numbers/digit_" + number + ".png");
     }
-    
+
     private ResourceLocation getPositiveNumberTexture(int number){
         return new ResourceLocation("riichi-mahjong","textures/gui/numbers/positive/positive_" + number + ".png");
     }
@@ -567,7 +567,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
         guiGraphics.blit(INFO_TEXTURE, infoX, infoY, 0, 0, infoSize, infoSize, infoSize, infoSize);
 
-        int mySeat = this.menu.getMySeat();
+        int mySeat = this.menu.getViewSeat();
         for(int seat=0;seat<4;seat++) {
             switch ((seat - mySeat + 4 ) % 4) {
                 case 1 -> {
@@ -1265,12 +1265,14 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
     private String getSeatName(int seat){
         PlayerInfo info = getSeatInfo(seat);
         if(info != null) return info.getProfile().getName();
+        if(seat == this.menu.getMySeat()) return this.minecraft.player.getGameProfile().getName();
         return DUMMY_NAMES[seat];
     }
 
     private ResourceLocation getSeatSkin(int seat){
         PlayerInfo info = getSeatInfo(seat);
         if(info != null) return info.getSkinLocation();
+        if(seat == this.menu.getMySeat()) return this.minecraft.player.getSkinTextureLocation();
         return DefaultPlayerSkin.getDefaultSkin(DUMMY_UUIDS[seat]);
     }
 
@@ -1364,139 +1366,4 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         buf.writeBlockPos(this.menu.getTablePos());
         ClientPlayNetworking.send(ModPackets.MATCH_START_PACKET, buf);
     }
-
-//    private void dummyMethod(){
-//        for(int seat=0;seat<allDiscarded.size();seat++){
-//            List<Tile> discardedBySeat = allDiscarded.get(seat);
-//
-//            float rotation;
-//            int baseX, baseY, scoreX, scoreY, riichiX, riichiY;
-//            int numberCount = 0, scoreTemp = this.menu.getScoreBySeat()[seat];
-//            int discardTileWidth = sx(TILE_WIDTH) * 8 / 9;
-//            int discardTileHeight = sx(TILE_HEIGHT) * 8 / 9;
-//            int scoreTextureWidth = sx(SCORE_TEXTURE_WIDTH);
-//            int scoreTextureHeight = sx(SCORE_TEXTURE_HEIGHT);
-//            int riichiTextureWidth = sx(32);
-//            int riichiTextureHeight = sx(5);
-//            boolean isMinus = scoreTemp < 0;
-//            switch(seat){
-//                case 1 -> {
-//                    rotation = -90f;
-//                    baseX = centerX + discardOffset;
-//                    baseY = centerY + (discardTilePerRow * discardTileWidth) / 2 - discardTileWidth;
-//                    do{
-//                        scoreTemp /= 10;
-//                        numberCount++;
-//                    }while(scoreTemp != 0);
-//                    scoreX = centerX + scoreOffset;
-//                    scoreY = centerY + (numberCount * scoreTextureWidth) / 2 - scoreTextureWidth;
-//                    if(isMinus) scoreY += scoreTextureWidth / 2;
-//                    riichiX = centerX + riichiOffset;
-//                    riichiY = centerY + riichiTextureWidth / 2;
-//                }
-//                case 2 -> {
-//                    rotation = 180f;
-//                    baseX = centerX + (discardTilePerRow * discardTileWidth) / 2 - discardTileWidth;
-//                    baseY = centerY - discardOffset - discardTileHeight;
-//                    do{
-//                        scoreTemp /= 10;
-//                        numberCount++;
-//                    }while(scoreTemp != 0);
-//                    scoreX = centerX + (numberCount * scoreTextureWidth) / 2 - scoreTextureWidth;
-//                    scoreY = centerY - scoreOffset - scoreTextureHeight;
-//                    if(isMinus) scoreX += scoreTextureWidth / 2;
-//                    riichiX = centerX + riichiTextureWidth / 2;
-//                    riichiY = centerY - riichiOffset;
-//                }
-//                case 3 -> {
-//                    rotation = 90f;
-//                    baseX = centerX - discardOffset - discardTileHeight;
-//                    baseY = centerY - (discardTilePerRow * discardTileWidth) / 2;
-//                    do{
-//                        scoreTemp /= 10;
-//                        numberCount++;
-//                    }while(scoreTemp != 0);
-//                    scoreX = centerX - scoreOffset - scoreTextureHeight;
-//                    scoreY = centerY - (numberCount * scoreTextureWidth) / 2;
-//                    if(isMinus) scoreY -= scoreTextureWidth / 2;
-//                    riichiX = centerX - riichiOffset;
-//                    riichiY = centerY - riichiTextureWidth / 2;
-//                }
-//                default -> {
-//                    rotation = 0f;
-//                    baseX = centerX - (discardTilePerRow * discardTileWidth) / 2;
-//                    baseY = centerY + discardOffset;
-//                    do{
-//                        scoreTemp /= 10;
-//                        numberCount++;
-//                    }while(scoreTemp != 0);
-//                    scoreX = centerX - (numberCount * scoreTextureWidth) / 2;
-//                    scoreY = centerY + scoreOffset;
-//                    if(isMinus) scoreX -= scoreTextureWidth / 2;
-//                    riichiX = centerX - riichiTextureWidth / 2;
-//                    riichiY = centerY + riichiOffset;
-//                }
-//            }
-//
-//            guiGraphics.pose().pushPose();
-//
-//            if(rotation != 0f){
-//                float centerPoseX = baseX + discardTileWidth / 2f;
-//                float centerPoseY = baseY + discardTileHeight / 2f;
-//                guiGraphics.pose().translate(centerPoseX, centerPoseY, 0);
-//                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
-//                guiGraphics.pose().translate(-centerPoseX, -centerPoseY, 0);
-//            }
-//
-//            for(int i=0;i<discardedBySeat.size();i++){
-//                Tile tile = discardedBySeat.get(i);
-//                int row = i / discardTilePerRow;
-//                int col = i % discardTilePerRow;
-//
-//                int x = baseX + col * discardTileWidth;
-//                int y = baseY + row * discardTileHeight;
-//                guiGraphics.blit(getTileTexture(tile),x,y,0,0,discardTileWidth,discardTileHeight,discardTileWidth,discardTileHeight);
-//            }
-//
-//            guiGraphics.pose().popPose();
-//            guiGraphics.pose().pushPose();
-//
-//            if(rotation != 0f){
-//                float centerPoseX = scoreX + scoreTextureWidth / 2f;
-//                float centerPoseY = scoreY + scoreTextureHeight / 2f;
-//                guiGraphics.pose().translate(centerPoseX, centerPoseY, 0);
-//                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
-//                guiGraphics.pose().translate(-centerPoseX, -centerPoseY, 0);
-//            }
-//
-//            scoreTemp = this.menu.getScoreBySeat()[seat];
-//            do{
-//                int number = scoreTemp % 10 * (scoreTemp % 10 < 0 ? -1 : 1);
-//                scoreTemp /= 10;
-//                numberCount--;
-//
-//                int x = scoreX + scoreTextureWidth * numberCount + (isMinus ? textW("-") : 0);   // textW("-") 랑 scoreTextureWidth 중에 더 자연스러운 것으로 바꾸기
-//                int y = scoreY;
-//                guiGraphics.blit(getNumberTexture(number),x,y,0,0,scoreTextureWidth,scoreTextureHeight,scoreTextureWidth,scoreTextureHeight);
-//            }while(scoreTemp != 0);
-//            if(isMinus) guiGraphics.blit(MINUS_DIGIT_TEXTURE,scoreX,scoreY,0,0,scoreTextureWidth,scoreTextureHeight,scoreTextureWidth,scoreTextureHeight);
-//
-//            guiGraphics.pose().popPose();
-//            guiGraphics.pose().pushPose();
-//
-//            if(rotation != 0f){
-//                float centerPoseX = riichiX + riichiTextureWidth / 2f;
-//                float centerPoseY = riichiY + riichiTextureHeight / 2f;
-//                guiGraphics.pose().translate(centerPoseX, centerPoseY, 0);
-//                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotation));
-//                guiGraphics.pose().translate(-centerPoseX, -centerPoseY, 0);
-//            }
-//
-//            boolean[] isRiichi = this.menu.isRiichi();
-//            if(isRiichi[seat]) guiGraphics.blit(new ResourceLocation("riichi-mahjong","textures/gui/riichi_stick.png"),
-//                    riichiX,riichiY,0,0,riichiTextureWidth,riichiTextureHeight,riichiTextureWidth,riichiTextureHeight);
-//
-//            guiGraphics.pose().popPose();
-//        }
-//    }
 }
