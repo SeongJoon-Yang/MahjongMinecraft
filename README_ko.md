@@ -1,5 +1,7 @@
 # Riichi Mahjong Mod
 
+[English](README.md) | 한국어
+
 마인크래프트에서 일본식 리치마작을 플레이할 수 있도록 만드는 Fabric 모드입니다.
 
 ## 스크린샷

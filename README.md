@@ -1,5 +1,7 @@
 # Riichi Mahjong Mod
 
+English | [한국어](README_ko.md)
+
 A Fabric mod that brings Japanese Riichi Mahjong to Minecraft.
 
 ## Screenshots
