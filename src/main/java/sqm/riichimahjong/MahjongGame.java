@@ -82,7 +82,6 @@ public class MahjongGame {
     private boolean isChankan = false;  // 창깡(구조만 추가, 4인용 확장)
     private String drawReason = null;
 
-    private enum CallChoice { PENDING, RON, PON, DAIMINKAN, CHI, PASS, NONE }
     private final CallChoice[] callChoices = {CallChoice.NONE, CallChoice.NONE, CallChoice.NONE, CallChoice.NONE};
     private final int[] chiChoiceIndex = {-1, -1, -1, -1};
 
