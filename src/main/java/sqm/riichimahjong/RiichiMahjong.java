@@ -58,32 +58,11 @@ public class RiichiMahjong implements ModInitializer {
 							return;
 						}
 
-						// 기존 코드
-						boolean callAvailable = game.canPon(0) || game.canDaiminkan(0) || !game.getChiOptionsForSeat(0).isEmpty() || game.canRon(0);
-						if(!callAvailable) {
-							game.clearCallState();
-							// 일단 여기서 사깡유국 생각할 것 같음
+						game.openCallWindow();
+						if(!game.hasPendingCall()){
+							game.clearCallWindow();
 							advanceDummyTurns(game, player, seat, false);
-						}else{	// 콜 가능할 때 로그 찍는 용
-							game.openCallWindow();
 						}
-
-						/*
-						// 새 코드(예정)
-						int canCallCount = 0;
-						for(int i=0;i<4;i++){
-							if(seat != i && game.canPon(i) || game.canDaiminkan(i) || !game.getChiOptionsForSeat(i).isEmpty() || game.canRon(i)){
-								canCallCount++;
-							}
-						}
-						if(canCallCount == 0){
-							game.clearCallState();
-							// 일단 여기서 사깡유국 생각할 것 같음
-							advanceDummyTurns(game, player, seat, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
-						}
-						game.setCanCallCount(canCallCount);
-						*/
-
 						RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(game.getCallChoices()));
 
 						saveData.setDirty();
@@ -112,28 +91,13 @@ public class RiichiMahjong implements ModInitializer {
 							return;
 						}
 
-						// 기존 코드
-						boolean callAvailable = game.canPon(0) || game.canDaiminkan(0) || !game.getChiOptionsForSeat(0).isEmpty() || game.canRon(0);
-						if(!callAvailable){
-							game.clearCallState();
+						// 새 코드(예정)
+						game.openCallWindow();
+						if(!game.hasPendingCall()){
+							game.clearCallWindow();
 							advanceDummyTurns(game, player, seat, false);
 						}
-
-						/*
-						// 새 코드(예정)
-						int canCallCount = 0;
-						for(int i=0;i<4;i++){
-							if(seat != i && game.canPon(i) || game.canDaiminkan(i) || !game.getChiOptionsForSeat(i).isEmpty() || game.canRon(i)){
-								canCallCount++;
-							}
-						}
-						if(canCallCount == 0){
-							game.clearCallState();
-							// 일단 여기서 사깡유국 생각할 것 같음
-							advanceDummyTurns(game, player, seat, false);	// 더미 턴도 누가 사람인지 알고 넘어가야 함!
-						}
-						game.setCanCallCount(canCallCount);
-						*/
+						RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(game.getCallChoices()));
 
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
@@ -157,6 +121,7 @@ public class RiichiMahjong implements ModInitializer {
 					boolean success = game.callPon(seat);
 					if (success) {
 						game.clearCallState();
+						game.clearCallWindow();
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
 					}
@@ -181,6 +146,7 @@ public class RiichiMahjong implements ModInitializer {
 					boolean success = game.callChi(seat, idx1, idx2);
 					if (success) {
 						game.clearCallState();
+						game.clearCallWindow();
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
 					}
@@ -200,6 +166,7 @@ public class RiichiMahjong implements ModInitializer {
 					if(success){
 						checkWinAndNotify(player, game); // 링샨 드로우 후 영상개화 가능성 체크
 						game.clearCallState();
+						game.clearCallWindow();
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
 					}
@@ -278,6 +245,7 @@ public class RiichiMahjong implements ModInitializer {
 					if (seat == null) return;
 					boolean success = game.declareRon(seat);
 					if(success) {
+						game.clearCallWindow();
 						player.sendSystemMessage(Component.literal("론! " + game.calculateHan(seat) + "판"));
 						int fu = game.calculateFu(seat);
 						player.sendSystemMessage(Component.literal("부수: " + fu));
@@ -312,6 +280,7 @@ public class RiichiMahjong implements ModInitializer {
 							game.setSelfCallPassed(true);
 						}
 						if(hasExternalCall){
+							game.clearCallWindow();
 							if(game.checkSuukaikanDraw()){
 								saveData.setDirty();
 								sendGameUpdateToAll(player,game);
@@ -402,25 +371,6 @@ public class RiichiMahjong implements ModInitializer {
 				}
 			});
 		}))));
-
-//		ServerPlayNetworking.registerGlobalReceiver(ModPackets.DEBUG_RESET_PACKET,((server, player, handler, buf, responseSender) -> {
-//			server.execute(() -> {
-//				if(!(player.containerMenu instanceof MahjongMenu menu)) return;
-//				BlockPos pos = menu.getTablePos();
-//				MahjongSavedData data = MahjongSavedData.get((ServerLevel) player.level());
-//				MahjongGame game = data.getGame(pos);
-//				if(game == null) return;
-//
-//				game.forceMatchOver();
-//				data.setDirty();
-//
-//				for(ServerPlayer p : server.getPlayerList().getPlayers()){
-//					if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
-//						p.closeContainer();    // 화면이 닫히고 removed()가 불려요
-//					}
-//				}
-//			});
-//		}));
 	}
 
 	public static ResourceLocation id(String path) {
@@ -588,15 +538,11 @@ public class RiichiMahjong implements ModInitializer {
 			int lastIndex = game.getHandSizeOfSeat(seat) - 1;
 			game.discardTileAt(seat, lastIndex);
 
-			boolean callAvailable = game.canPon(humanSeat) || game.canChi(humanSeat)
-					|| game.canDaiminkan(humanSeat) || game.canRon(humanSeat);
-			RiichiMahjong.LOGGER.info("advanceDummyTurns: seat={}, turnOrder(after discard)={}, canChi(humanSeat)={}, callAvailable={}",
-					seat, game.getTurnOrder(), game.canChi(humanSeat), callAvailable);
-			if(callAvailable) {
-				game.openCallWindow();
+			game.openCallWindow();
+			if(game.hasPendingCall()){
 				return;
 			}
-			game.clearCallState();
+			game.clearCallWindow();
 		}
 
 		if(!game.isGameEnd() && game.getTurnOrder() == humanSeat && !skipDraw){
