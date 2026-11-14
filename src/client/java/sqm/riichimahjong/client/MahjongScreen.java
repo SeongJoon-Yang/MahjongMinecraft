@@ -203,6 +203,9 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             }
         }
 
+        // 망겜 초기화용
+//        guiGraphics.fill(px(-10),py(-10),px(-5),py(-5),0xFFFFFFFF);
+
         // gui 디버깅용
 //        guiGraphics.fill(px(128), 0, px(128) + 1, this.height, 0xFFFF00FF);   // 가로 중심선
 //        guiGraphics.fill(0, py(100), this.width, py(100) + 1, 0xFFFF00FF);    // 세로 중심선
@@ -446,6 +449,12 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 sendHandMakeUpPacket(!this.menu.isHandMakeUp());
             }
         }
+
+        // 망겜 초기화용
+//        if(mouseX >= px(-10) && mouseX <= px(-5) && mouseY >= py(-10) && mouseY <= py(-5)){
+//            ClientPlayNetworking.send(ModPackets.DEBUG_RESET_PACKET, PacketByteBufs.create());
+//            return true;
+//        }
 
         return super.mouseClicked(mouseX, mouseY, button);
     }

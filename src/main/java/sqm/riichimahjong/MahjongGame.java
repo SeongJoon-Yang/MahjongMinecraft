@@ -82,6 +82,10 @@ public class MahjongGame {
     private boolean isChankan = false;  // 창깡(구조만 추가, 4인용 확장)
     private String drawReason = null;
 
+    private enum CallChoice { PENDING, RON, PON, DAIMINKAN, CHI, PASS, NONE }
+    private final CallChoice[] callChoices = {CallChoice.NONE, CallChoice.NONE, CallChoice.NONE, CallChoice.NONE};
+    private final int[] chiChoiceIndex = {-1, -1, -1, -1};
+
     private static final int MAX_KAN = 4;   // 기본값 4, 테스트 시에만 줄이기
 
     private static final Set<String> DOUBLE_YAKUMAN = Set.of(
@@ -2004,6 +2008,33 @@ public class MahjongGame {
         if(!dealerRepeats && roundCount >= 4) matchOver = true;
     }
 
+    public boolean hasAnyCall(int seat){
+        return canPon(seat) || canDaiminkan(seat) || !getChiOptionsForSeat(seat).isEmpty() || canRon(seat);
+    }
+
+    public void openCallWindow(){
+        RiichiMahjong.LOGGER.info("Call CallWindow");
+        int lastDiscarderSeat = lastDiscardOwner;
+        for(int seat = 0;seat < 4;seat++){
+            chiChoiceIndex[seat] = -1;
+            if(seat == lastDiscarderSeat || !hasAnyCall(seat)) callChoices[seat] = CallChoice.NONE;
+            else if(isSeatAssigned(seat)) callChoices[seat] = CallChoice.PENDING;
+            else callChoices[seat] = CallChoice.PASS;
+        }
+    }
+
+    public boolean hasPendingCall(){
+        for(CallChoice choice : callChoices) if(choice == CallChoice.PENDING) return true;
+        return false;
+    }
+
+    public void clearCallWindow(){
+        for(int seat = 0;seat < 4;seat++){
+            callChoices[seat] = CallChoice.NONE;
+            chiChoiceIndex[seat] = -1;
+        }
+    }
+
     public CompoundTag toNBT(){
         CompoundTag tag = new CompoundTag();
         tag.put("wall",tileListToNBT(wall));
@@ -2517,6 +2548,8 @@ public class MahjongGame {
 
     public int getDeclareCallCount() { return declareCallCount; }
 
+    public CallChoice[] getCallChoices(){ return callChoices.clone(); }
+
     public void setHandMakeUp(boolean handMakeUp) { this.handMakeUp = handMakeUp; }
 
 //    public void resetToPerspective(int seat){
@@ -2554,7 +2587,8 @@ public class MahjongGame {
         return true;
     }
 
-//    public void matchOverTester(boolean matchOver){
-//        this.matchOver = matchOver;
+//    public void forceMatchOver(){
+//        matchOver = true;
+//        clearCallState();
 //    }
 }

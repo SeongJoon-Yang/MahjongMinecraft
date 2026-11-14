@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public class MahjongMenu extends AbstractContainerMenu {
     private MahjongGame.GameState state;
-    private int mySeat = 0;
+    private int mySeat = -1;
     private final UUID[] seatUuids = new UUID[4];
 
     private final List<Tile> playerHand;

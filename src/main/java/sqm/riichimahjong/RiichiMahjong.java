@@ -9,6 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,8 @@ public class RiichiMahjong implements ModInitializer {
 							game.clearCallState();
 							// 일단 여기서 사깡유국 생각할 것 같음
 							advanceDummyTurns(game, player, seat, false);
+						}else{	// 콜 가능할 때 로그 찍는 용
+							game.openCallWindow();
 						}
 
 						/*
@@ -80,6 +83,8 @@ public class RiichiMahjong implements ModInitializer {
 						}
 						game.setCanCallCount(canCallCount);
 						*/
+
+						RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(game.getCallChoices()));
 
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
@@ -384,6 +389,11 @@ public class RiichiMahjong implements ModInitializer {
 				MahjongSavedData savedData = MahjongSavedData.get(player.serverLevel());
 				MahjongGame game = savedData.getGame(tablePos);
 				if(game != null){
+					// seat가 null이거나 0이 아니면 시작 패킷 무시
+					Integer seat = game.getSeatOf(player.getUUID());
+					if(seat == null || seat != 0) return;
+					// game 상태가 대기 상태가 아니면 시작 패킷 무시
+					if(game.getGameState() != MahjongGame.GameState.WAITING) return;
 					boolean success = game.startGame();
 					if(success){
 						savedData.setDirty();
@@ -392,6 +402,25 @@ public class RiichiMahjong implements ModInitializer {
 				}
 			});
 		}))));
+
+//		ServerPlayNetworking.registerGlobalReceiver(ModPackets.DEBUG_RESET_PACKET,((server, player, handler, buf, responseSender) -> {
+//			server.execute(() -> {
+//				if(!(player.containerMenu instanceof MahjongMenu menu)) return;
+//				BlockPos pos = menu.getTablePos();
+//				MahjongSavedData data = MahjongSavedData.get((ServerLevel) player.level());
+//				MahjongGame game = data.getGame(pos);
+//				if(game == null) return;
+//
+//				game.forceMatchOver();
+//				data.setDirty();
+//
+//				for(ServerPlayer p : server.getPlayerList().getPlayers()){
+//					if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
+//						p.closeContainer();    // 화면이 닫히고 removed()가 불려요
+//					}
+//				}
+//			});
+//		}));
 	}
 
 	public static ResourceLocation id(String path) {
@@ -563,7 +592,10 @@ public class RiichiMahjong implements ModInitializer {
 					|| game.canDaiminkan(humanSeat) || game.canRon(humanSeat);
 			RiichiMahjong.LOGGER.info("advanceDummyTurns: seat={}, turnOrder(after discard)={}, canChi(humanSeat)={}, callAvailable={}",
 					seat, game.getTurnOrder(), game.canChi(humanSeat), callAvailable);
-			if(callAvailable) return;
+			if(callAvailable) {
+				game.openCallWindow();
+				return;
+			}
 			game.clearCallState();
 		}
 
