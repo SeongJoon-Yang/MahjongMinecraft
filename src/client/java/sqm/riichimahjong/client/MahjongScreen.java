@@ -203,9 +203,6 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             }
         }
 
-        // 망겜 초기화용
-//        guiGraphics.fill(px(-10),py(-10),px(-5),py(-5),0xFFFFFFFF);
-
         // gui 디버깅용
 //        guiGraphics.fill(px(128), 0, px(128) + 1, this.height, 0xFFFF00FF);   // 가로 중심선
 //        guiGraphics.fill(0, py(100), this.width, py(100) + 1, 0xFFFF00FF);    // 세로 중심선
@@ -254,8 +251,9 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                     int optionY = py(70 + i * 18);
                     if (mouseX >= popupX && mouseX <= popupX + sx(80) && mouseY >= optionY && mouseY <= optionY + sx(16)) {
                         if (popupType == PopupType.CHI) {
-                            List<Integer> option = this.menu.getChiOptions().get(i);
-                            sendChiPacket(option.get(0), option.get(1));
+                            // List<Integer> option = this.menu.getChiOptions().get(i);
+                            // sendChiPacket(option.get(0), option.get(1));
+                            sendPendingCallPacket(CallChoice.CHI,i);
                         } else {
                             Tile tile = kanPopupTiles.get(i);
                             if (kanPopupIsKakan.get(i)) {
@@ -296,7 +294,8 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                     }
                     if (this.menu.canPon()) {
                         if (isWithinCallButton(mouseX, mouseY, x, callButtonStartY)) {
-                            sendPonPacket();
+                            // sendPonPacket();
+                            sendPendingCallPacket(CallChoice.PON,-1);
                             riichiMode = false;
                             return true;
                         }
@@ -306,7 +305,8 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                         if (isWithinCallButton(mouseX, mouseY, x, callButtonStartY)) {
                             List<List<Integer>> options = this.menu.getChiOptions();
                             if (options.size() == 1) {
-                                sendChiPacket(options.get(0).get(0), options.get(0).get(1));
+                                // sendChiPacket(options.get(0).get(0), options.get(0).get(1));
+                                sendPendingCallPacket(CallChoice.CHI,0);
                             } else {
                                 popupType = PopupType.CHI;
                             }
@@ -318,7 +318,8 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                     if (this.menu.canDaiminkan() || this.menu.canAnkan() || this.menu.canKakan()) {
                         if (isWithinCallButton(mouseX, mouseY, x, callButtonStartY)) {
                             if (this.menu.canDaiminkan()) {
-                                sendDaiminkanPacket();
+                                // sendDaiminkanPacket();
+                                sendPendingCallPacket(CallChoice.DAIMINKAN,-1);
                             } else {
                                 kanPopupTiles.clear();
                                 kanPopupIsKakan.clear();
@@ -358,14 +359,19 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                     }
                     if (this.menu.canRon()) {
                         if (isWithinCallButton(mouseX, mouseY, x, callButtonStartY)) {
-                            sendRonPacket();
+                            // sendRonPacket();
+                            sendPendingCallPacket(CallChoice.RON,-1);
                             return true;
                         }
                         x += sx(CALL_BUTTON_WIDTH + CALL_BUTTON_GAP);
                     }
                     if (isWithinCallButton(mouseX, mouseY, x, callButtonStartY)) {
                         riichiMode = false;
-                        sendPassPacket();
+                        if(this.menu.canPon() || this.menu.canChi() || this.menu.canDaiminkan() || this.menu.canRon()){
+                            sendPendingCallPacket(CallChoice.PASS,-1);
+                        }else{
+                            sendPassPacket();
+                        }
                         return true;
                     }
                 }
@@ -449,12 +455,6 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 sendHandMakeUpPacket(!this.menu.isHandMakeUp());
             }
         }
-
-        // 망겜 초기화용
-//        if(mouseX >= px(-10) && mouseX <= px(-5) && mouseY >= py(-10) && mouseY <= py(-5)){
-//            ClientPlayNetworking.send(ModPackets.DEBUG_RESET_PACKET, PacketByteBufs.create());
-//            return true;
-//        }
 
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -1374,5 +1374,13 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeBlockPos(this.menu.getTablePos());
         ClientPlayNetworking.send(ModPackets.MATCH_START_PACKET, buf);
+    }
+
+    private void sendPendingCallPacket(CallChoice callChoice, int chiIndex){
+        FriendlyByteBuf buf = PacketByteBufs.create();
+        buf.writeBlockPos(this.menu.getTablePos());
+        buf.writeEnum(callChoice);
+        buf.writeInt(chiIndex);     // chi가 아닌 경우 -1을 보냄
+        ClientPlayNetworking.send(ModPackets.PENDING_CALL_PACKET, buf);
     }
 }

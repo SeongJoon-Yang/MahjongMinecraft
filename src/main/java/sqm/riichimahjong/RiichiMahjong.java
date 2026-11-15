@@ -335,7 +335,7 @@ public class RiichiMahjong implements ModInitializer {
 			});
 		}));
 
-		ServerPlayNetworking.registerGlobalReceiver(ModPackets.DECLARE_KYUUSHU_PACKET,(((server, player, handler, buf, responseSender) -> {
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.DECLARE_KYUUSHU_PACKET,((server, player, handler, buf, responseSender) -> {
 			BlockPos tablePos = buf.readBlockPos();
 			server.execute(() -> {
 				MahjongSavedData savedData = MahjongSavedData.get(player.serverLevel());
@@ -350,9 +350,9 @@ public class RiichiMahjong implements ModInitializer {
 					}
 				}
 			});
-		})));
+		}));
 
-		ServerPlayNetworking.registerGlobalReceiver(ModPackets.MATCH_START_PACKET,((((server, player, handler, buf, responseSender) -> {
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.MATCH_START_PACKET,((server, player, handler, buf, responseSender) -> {
 			BlockPos tablePos = buf.readBlockPos();
 			server.execute(()->{
 				MahjongSavedData savedData = MahjongSavedData.get(player.serverLevel());
@@ -370,7 +370,40 @@ public class RiichiMahjong implements ModInitializer {
 					}
 				}
 			});
-		}))));
+		}));
+
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.PENDING_CALL_PACKET,((server, player, handler, buf, responseSender) -> {
+			BlockPos tablePos = buf.readBlockPos();
+			CallChoice choice = buf.readEnum(CallChoice.class);
+			int chiIndex = buf.readInt();
+			server.execute(() -> {
+				MahjongSavedData saveData = MahjongSavedData.get(player.serverLevel());
+				MahjongGame game = saveData.getGame(tablePos);
+				if(game != null){
+					int seat = game.getSeatOf(player.getUUID());
+					if(seat < 0) return;	// 게임 좌석에 앉아있지 않은 경우
+					if(choice == CallChoice.NONE || choice == CallChoice.PENDING) return;	// none이나 pending을 보내면 거부하기
+					if(game.getCallChoices()[seat] != CallChoice.PENDING) return;	// CallChoice가 Pending이 아니면 넘김
+					if(choice == CallChoice.RON) { if(!game.canRon(seat)) return; }
+					else if(choice == CallChoice.PON) { if(!game.canPon(seat)) return; }
+					else if(choice == CallChoice.DAIMINKAN) { if(!game.canDaiminkan(seat)) return; }
+					else if(choice == CallChoice.CHI) {
+						if(chiIndex < 0 || chiIndex >= game.getChiOptionsForSeat(seat).size() || game.getChiOptionsForSeat(seat).isEmpty()) return;
+					}
+					game.setCallChoice(seat, choice, chiIndex);
+
+					CallChoice[] callChoices = game.getCallChoices();
+					for(int i=0;i<4;i++){
+						if(callChoices[i] == CallChoice.PENDING) return;
+					}
+
+					boolean callResolved = game.resolveCalls();
+					if(!callResolved) advanceDummyTurns(game, player, seat, false);
+					saveData.setDirty();
+					sendGameUpdateToAll(player,game);
+				}
+			});
+		}));
 	}
 
 	public static ResourceLocation id(String path) {

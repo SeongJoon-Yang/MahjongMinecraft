@@ -1797,26 +1797,6 @@ public class MahjongGame {
         for(int seat=0;seat<4;seat++){
             if(handMakeUp) handSort(hands[seat]);
         }
-
-        // 테스트용
-//        hand.add(new Tile(TileSuit.PIN, 2));
-//        hand.add(new Tile(TileSuit.PIN, 3));
-//        hand.add(new Tile(TileSuit.MAN, 1));
-//        hand.add(new Tile(TileSuit.MAN, 1));
-//        hand.add(new Tile(TileSuit.MAN, 2));
-//        hand.add(new Tile(TileSuit.MAN, 2));
-//        hand.add(new Tile(TileSuit.MAN, 3));
-//        hand.add(new Tile(TileSuit.MAN, 3));
-//        hand.add(new Tile(TileSuit.MAN, 4));
-//        hand.add(new Tile(TileSuit.MAN, 4));
-//        hand.add(new Tile(TileSuit.MAN, 5));
-//        hand.add(new Tile(TileSuit.MAN, 5));
-//        hand.add(new Tile(TileSuit.MAN, 6));
-//        hand.add(new Tile(TileSuit.MAN, 6));
-//        winningTile = new Tile(TileSuit.MAN, 6);
-//        justDrew = true;
-//        turnOrder = dealerSeat;
-//        if(turnOrder != 0) hand.remove(hand.size()-1);
     }
 
     private List<List<List<Tile>>> getAllMeldDecompositions(List<Tile> tiles){
@@ -2028,10 +2008,57 @@ public class MahjongGame {
     }
 
     public void clearCallWindow(){
+        RiichiMahjong.LOGGER.info("clearCallWindow 호출됨");
         for(int seat = 0;seat < 4;seat++){
             callChoices[seat] = CallChoice.NONE;
             chiChoiceIndex[seat] = -1;
         }
+        RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(callChoices));
+    }
+
+    public boolean resolveCalls(){
+        int discarder = lastDiscardOwner;
+
+        for(int i=1;i<4;i++){
+            int seat = (discarder + i) % 4;
+            if(callChoices[seat] == CallChoice.RON){
+                declareRon(seat);
+                clearCallWindow();
+                return true;
+            }
+        }
+
+        for(int seat=0;seat<4;seat++){
+            if(callChoices[seat] == CallChoice.PON){
+                callPon(seat);
+                clearCallWindow();
+                return true;
+            }
+            if(callChoices[seat] == CallChoice.DAIMINKAN){
+                callDaiminkan(seat);
+                clearCallWindow();
+                return true;
+            }
+        }
+
+        for(int seat=0;seat<4;seat++){
+            if(callChoices[seat] == CallChoice.CHI){
+                List<Integer> option = getChiOptionsForSeat(seat).get(chiChoiceIndex[seat]);
+                callChi(seat, option.get(0), option.get(1));
+                clearCallWindow();
+                return true;
+            }
+        }
+        clearCallWindow();
+        for(int seat=0;seat<4;seat++){
+            if(callChoices[seat] == CallChoice.PASS && canRon(seat)){
+                if(isRiichi(seat)) setRiichiFuriten(seat); else setTempFuriten(true, seat);
+            }
+        }
+        if(checkSuukaikanDraw()){
+            return true;
+        }
+        return false;
     }
 
     public CompoundTag toNBT(){
@@ -2576,6 +2603,11 @@ public class MahjongGame {
 
     public void setDeclareCallCount(int declareCallCount) { this.declareCallCount = declareCallCount; }
 
+    public void setCallChoice(int seat, CallChoice choice, int chiIndex) {
+        this.callChoices[seat] = choice;
+        this.chiChoiceIndex[seat] = chiIndex;
+    }
+
     public boolean declareKyuushuKyuuhai(int seat){
         if(!canDeclareKyuushu(seat)) return false;
 
@@ -2585,9 +2617,4 @@ public class MahjongGame {
         drawReason = "구종구패";
         return true;
     }
-
-//    public void forceMatchOver(){
-//        matchOver = true;
-//        clearCallState();
-//    }
 }
