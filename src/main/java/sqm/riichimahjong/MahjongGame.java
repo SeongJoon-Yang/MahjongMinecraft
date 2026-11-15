@@ -2020,6 +2020,12 @@ public class MahjongGame {
     public boolean resolveCalls(){
         int discarder = lastDiscardOwner;
 
+        for(int seat=0;seat<4;seat++){
+            if(callChoices[seat] == CallChoice.PASS && canRon(seat)){
+                if(isRiichi(seat)) setRiichiFuriten(seat); else setTempFuriten(true, seat);
+            }
+        }
+
         for(int i=1;i<4;i++){
             int seat = (discarder + i) % 4;
             if(callChoices[seat] == CallChoice.RON){
@@ -2054,13 +2060,9 @@ public class MahjongGame {
                 return true;
             }
         }
+
         clearCallState();
         clearCallWindow();
-        for(int seat=0;seat<4;seat++){
-            if(callChoices[seat] == CallChoice.PASS && canRon(seat)){
-                if(isRiichi(seat)) setRiichiFuriten(seat); else setTempFuriten(true, seat);
-            }
-        }
         if(checkSuukaikanDraw()){
             return true;
         }

@@ -76,6 +76,8 @@ public class MahjongTableBlock extends Block {
 
                 @Override
                 public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
+                    int playerSeat = finalGame.getSeatOf(player.getUUID());
+
                     buf.writeEnum(finalGame.getGameState());
                     buf.writeInt(playerHand.size());
                     for (Tile tile : playerHand) {
@@ -125,8 +127,7 @@ public class MahjongTableBlock extends Block {
                     buf.writeBoolean(finalGame.isTsumo());
                     buf.writeInt(finalGame.getTurnOrder());
                     buf.writeInt(finalGame.getDealerSeat());
-                    // buf.writeInt(finalGame.getCanCallCount());	// 일단 추가 안하고 주석처리
-                    // buf.writeint(finalGame.getDeclareCallCount());	// 일단 추가 안하고 주석처리
+                    buf.writeBoolean(finalGame.getCallChoices()[playerSeat] == CallChoice.PENDING);
 
                     buf.writeInt(finalGame.getWinSeat());
                     buf.writeInt(finalGame.getWinHan());

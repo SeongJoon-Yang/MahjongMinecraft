@@ -394,7 +394,11 @@ public class RiichiMahjong implements ModInitializer {
 
 					CallChoice[] callChoices = game.getCallChoices();
 					for(int i=0;i<4;i++){
-						if(callChoices[i] == CallChoice.PENDING) return;
+						if(callChoices[i] == CallChoice.PENDING){
+							saveData.setDirty();
+							sendGameUpdate(player, game);
+							return;
+						}
 					}
 
 					boolean callResolved = game.resolveCalls();
@@ -466,8 +470,7 @@ public class RiichiMahjong implements ModInitializer {
 		responseBuf.writeBoolean(game.isTsumo());
 		responseBuf.writeInt(game.getTurnOrder());
 		responseBuf.writeInt(game.getDealerSeat());
-		// responseBuf.writeInt(game.getCanCallCount());	// 일단 추가 안하고 주석처리
-		// responseBuf.writeint(game.getDeclareCallCount());	// 일단 추가 안하고 주석처리
+		responseBuf.writeBoolean(game.getCallChoices()[playerSeat] == CallChoice.PENDING);
 
 		responseBuf.writeInt(game.getWinSeat());
 		responseBuf.writeInt(game.getWinHan());

@@ -37,8 +37,7 @@ public class MahjongMenu extends AbstractContainerMenu {
     private boolean isTsumo = false;
     private int turnOrder = 0;
     private int dealerSeat = 0;
-    // private int canCallCount = 0;   // 일단 추가 안하고 주석처리
-    // private int declareCallCount = 0;   // 일단 추가 안하고 주석처리
+    private boolean myCallPending = false;
     private int wallSize = 69;
     private int roundWind = 0;
     private boolean isFuriten = false;
@@ -146,8 +145,7 @@ public class MahjongMenu extends AbstractContainerMenu {
         this.isTsumo = buf.readBoolean();
         this.turnOrder = buf.readInt();
         this.dealerSeat = buf.readInt();
-        // this.canCallCount = buf.readInt();   // 일단 추가 안하고 주석처리
-        // this.declareCallCount = buf.readInt();
+        this.myCallPending = buf.readBoolean();
 
         this.lastWinSeat = buf.readInt();
         this.lastWinHan = buf.readInt();
@@ -300,6 +298,8 @@ public class MahjongMenu extends AbstractContainerMenu {
 
     public UUID getSeatUuid(int seat) { return seatUuids[seat]; }
 
+    public boolean getMyCallPending(){ return myCallPending; }
+
     public void setGameState(MahjongGame.GameState state) { this.state = state;}
 
     public void setHandMakeUp(boolean handMakeUp)   { this.handMakeUp = handMakeUp; }
@@ -318,13 +318,7 @@ public class MahjongMenu extends AbstractContainerMenu {
 
     public void setDealerSeat(int dealerSeat) { this.dealerSeat = dealerSeat; }
 
-    /*
-    // 일단 추가 안하고 주석처리
-    public void setCallCount(int canCallCount, int declareCallCount) {
-        this.canCallCount = canCallCount;
-        this.declareCallCount = declareCallCount;
-    }
-     */
+    public void setMyCallPending(boolean myCallPending) { this.myCallPending = myCallPending; }
 
     public void setYakuAndHan(List<String> yaku, List<Integer> han) {
         this.yaku = yaku;

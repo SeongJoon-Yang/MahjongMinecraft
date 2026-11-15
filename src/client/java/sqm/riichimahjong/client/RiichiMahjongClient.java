@@ -81,8 +81,7 @@ public class RiichiMahjongClient implements ClientModInitializer {
 			boolean isTsumo = buf.readBoolean();
 			int turnOrder = buf.readInt();
 			int dealerSeat = buf.readInt();
-			// int canCallCount = buf.readInt();   // 일단 추가 안하고 주석처리
-			// int declareCallCount = buf.readInt();   // 일단 추가 안하고 주석처리
+			boolean myCallPending = buf.readBoolean();
 
 			int lastWinSeat = buf.readInt();
 			int lastWinHan = buf.readInt();
@@ -162,7 +161,7 @@ public class RiichiMahjongClient implements ClientModInitializer {
 					mahjongMenu.setTsumo(isTsumo);
 					mahjongMenu.setTurnOrder(turnOrder);
 					mahjongMenu.setDealerSeat(dealerSeat);
-					// mahjongMenu.setCallCount(canCallCount, decalreCallCount);
+					mahjongMenu.setMyCallPending(myCallPending);
 					mahjongMenu.setLastWins(lastWinSeat,lastWinHan,lastWinFu,lastWinPoints,lastWinLabel);
 					mahjongMenu.setWinningTile(winningTile);
 					mahjongMenu.setYakuAndHan(yakuList, yakuHanList);

@@ -34,6 +34,13 @@ loom {
 			runDir "run2"
 			ideConfigGenerated true
 		}
+		client3 {
+			client()
+			name = "Minecraft Client 3"
+			programArgs "--username", "Player604"
+			runDir "run3"
+			ideConfigGenerated true
+		}
 	}
 }
 
