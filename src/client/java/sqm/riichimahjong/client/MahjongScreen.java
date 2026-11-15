@@ -832,6 +832,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         guiGraphics.fill(turnStartX-sx(2),turnStartY-sx(2),turnStartX+turnTextWidth+sx(2),turnStartY+sx(12), 0x66FFFFFF);
         drawText(guiGraphics,turnOrderText,230,10,0x000000);
 
+        // 여기 바꾸기 전까지 MahjongGame의 resolveCalls는 clearCallState도 함께 사용해야 함
         boolean hasCallOption = this.menu.canDeclareKyuushu() || this.menu.canPon() || this.menu.canChi()
                 || this.menu.canDaiminkan() || this.menu.canAnkan() || this.menu.canKakan()
                 || this.menu.canRiichi() || this.menu.canTsumo() || this.menu.canRon();

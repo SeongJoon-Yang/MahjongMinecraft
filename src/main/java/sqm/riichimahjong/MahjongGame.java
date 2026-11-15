@@ -2016,6 +2016,7 @@ public class MahjongGame {
         RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(callChoices));
     }
 
+    // MahjongScreen의 hasCallOption 바꾸기 전까지 clearCallState 함께 사용하기
     public boolean resolveCalls(){
         int discarder = lastDiscardOwner;
 
@@ -2023,6 +2024,7 @@ public class MahjongGame {
             int seat = (discarder + i) % 4;
             if(callChoices[seat] == CallChoice.RON){
                 declareRon(seat);
+                clearCallState();
                 clearCallWindow();
                 return true;
             }
@@ -2031,11 +2033,13 @@ public class MahjongGame {
         for(int seat=0;seat<4;seat++){
             if(callChoices[seat] == CallChoice.PON){
                 callPon(seat);
+                clearCallState();
                 clearCallWindow();
                 return true;
             }
             if(callChoices[seat] == CallChoice.DAIMINKAN){
                 callDaiminkan(seat);
+                clearCallState();
                 clearCallWindow();
                 return true;
             }
@@ -2045,10 +2049,12 @@ public class MahjongGame {
             if(callChoices[seat] == CallChoice.CHI){
                 List<Integer> option = getChiOptionsForSeat(seat).get(chiChoiceIndex[seat]);
                 callChi(seat, option.get(0), option.get(1));
+                clearCallState();
                 clearCallWindow();
                 return true;
             }
         }
+        clearCallState();
         clearCallWindow();
         for(int seat=0;seat<4;seat++){
             if(callChoices[seat] == CallChoice.PASS && canRon(seat)){
