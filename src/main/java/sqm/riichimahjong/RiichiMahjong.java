@@ -224,12 +224,9 @@ public class RiichiMahjong implements ModInitializer {
 					if (seat == null) return;
 					boolean success = game.declareTsumo(seat);
 					if(success) {
-						player.sendSystemMessage(Component.literal("쯔모! " + game.calculateHan(seat) + "판"));
-						int fu = game.calculateFu(seat);
-						player.sendSystemMessage(Component.literal("부수: " + fu));
-						player.sendSystemMessage(Component.literal("역: " + String.join(", ", game.getYaku(seat))));
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
+						sendWinGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -246,12 +243,9 @@ public class RiichiMahjong implements ModInitializer {
 					boolean success = game.declareRon(seat);
 					if(success) {
 						game.clearCallWindow();
-						player.sendSystemMessage(Component.literal("론! " + game.calculateHan(seat) + "판"));
-						int fu = game.calculateFu(seat);
-						player.sendSystemMessage(Component.literal("부수: " + fu));
-						player.sendSystemMessage(Component.literal("역: " + String.join(", ", game.getYaku(seat))));
 						saveData.setDirty();
 						sendGameUpdateToAll(player,game);
+						sendWinGameUpdateToAll(player,game);
 					}
 				}
 			});
@@ -405,6 +399,9 @@ public class RiichiMahjong implements ModInitializer {
 					if(!callResolved) advanceDummyTurns(game, player, seat, false);
 					saveData.setDirty();
 					sendGameUpdateToAll(player,game);
+					if(game.isGameEnd() && game.isWin()){
+						sendWinGameUpdateToAll(player,game);
+					}
 				}
 			});
 		}));
@@ -429,7 +426,6 @@ public class RiichiMahjong implements ModInitializer {
 		for(Tile t : game.getDiscarded()){
 			t.writeToBuf(responseBuf);
 		}
-		// 디버그용 나중에 수정될 수 있음
 		responseBuf.writeInt(4);
 		for(int seat=0;seat<4;seat++){
 			List<Tile> seatDiscarded = game.getDiscardedOfSeat(seat);
@@ -455,13 +451,6 @@ public class RiichiMahjong implements ModInitializer {
 		List<Tile> doraIndicators = game.getRevealedDoraIndicators();
 		responseBuf.writeInt(doraIndicators.size());
 		for(Tile t : doraIndicators) t.writeToBuf(responseBuf);
-		RiichiMahjong.LOGGER.info("뒷도라 전송됨? gameEnd={},win={},riichi={},개수={}",
-				game.isGameEnd(),game.isWin(),game.isRiichi(playerSeat),game.getRevealedUraDoraIndicators().size());
-		List<Tile> uraDoraIndicators = (game.isGameEnd() && game.isWin() && game.isRiichi(playerSeat))
-				? game.getRevealedUraDoraIndicators()
-				: new ArrayList<>();
-		responseBuf.writeInt(uraDoraIndicators.size());
-		for(Tile tile : uraDoraIndicators) tile.writeToBuf(responseBuf);
 
 		responseBuf.writeBoolean(game.isHandMakeUp());
 		responseBuf.writeBoolean(game.isGameEnd());
@@ -472,22 +461,9 @@ public class RiichiMahjong implements ModInitializer {
 		responseBuf.writeInt(game.getDealerSeat());
 		responseBuf.writeBoolean(game.getCallChoices()[playerSeat] == CallChoice.PENDING);
 
-		responseBuf.writeInt(game.getWinSeat());
-		responseBuf.writeInt(game.getWinHan());
-		responseBuf.writeInt(game.getWinFu());
-		responseBuf.writeInt(game.getWinScores());
-		responseBuf.writeUtf(game.getWinLabel());
-
 		Tile winningTile = game.getWinningTile();
 		responseBuf.writeBoolean(winningTile != null);
 		if(winningTile != null) winningTile.writeToBuf(responseBuf);
-
-		List<Map.Entry<String,Integer>> entries = game.getYakuResultEntries(playerSeat);
-		responseBuf.writeInt(entries.size());
-		for(Map.Entry<String,Integer> e : entries){
-			responseBuf.writeUtf(e.getKey());
-			responseBuf.writeInt(e.getValue());
-		}
 
 		responseBuf.writeBoolean(game.canDeclareRiichi(playerSeat));
 		responseBuf.writeBoolean(game.canPon(playerSeat));
@@ -536,6 +512,63 @@ public class RiichiMahjong implements ModInitializer {
 		for(ServerPlayer p : actor.server.getPlayerList().getPlayers()){
 			if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
 				sendGameUpdate(p, game);   // 안에서 받는 사람의 좌석으로 시점을 맞춰요
+			}
+		}
+	}
+
+	public static void sendWinGameUpdate(ServerPlayer player, MahjongGame game){
+		FriendlyByteBuf responseBuf = PacketByteBufs.create();
+
+		int lastWinSeat = game.getWinSeat();
+		responseBuf.writeInt(lastWinSeat);
+
+		if(lastWinSeat < 0) return;
+
+		// 화료자 시점으로 변경
+		game.switchToSeat(lastWinSeat);
+
+		responseBuf.writeInt(game.getHand().size());
+		for(Tile tile : game.getHand()){
+			tile.writeToBuf(responseBuf);
+		}
+
+		responseBuf.writeInt(game.getMelds().size());
+		for(int i=0;i<game.getMelds().size();i++){
+			responseBuf.writeEnum(game.getMeldTypes().get(i));
+			List<Tile> meld = game.getMelds().get(i);
+			responseBuf.writeInt(meld.size());
+			for(Tile t : meld){
+				t.writeToBuf(responseBuf);
+			}
+		}
+
+		List<Tile> uraDoraIndicators = (game.isGameEnd() && game.isWin() && game.isRiichi(lastWinSeat))
+				? game.getRevealedUraDoraIndicators()
+				: new ArrayList<>();
+		responseBuf.writeInt(uraDoraIndicators.size());
+		for(Tile tile : uraDoraIndicators) tile.writeToBuf(responseBuf);
+
+		responseBuf.writeInt(game.getWinHan());
+		responseBuf.writeInt(game.getWinFu());
+		responseBuf.writeInt(game.getWinScores());
+		responseBuf.writeUtf(game.getWinLabel());
+
+		List<Map.Entry<String,Integer>> entries = game.getYakuResultEntries(lastWinSeat);
+		responseBuf.writeInt(entries.size());
+		for(Map.Entry<String,Integer> e : entries){
+			responseBuf.writeUtf(e.getKey());
+			responseBuf.writeInt(e.getValue());
+		}
+
+		ServerPlayNetworking.send(player, ModPackets.WIN_GAME_UPDATE_PACKET ,responseBuf);
+	}
+
+	private static void sendWinGameUpdateToAll(ServerPlayer actor, MahjongGame game){
+		if(!(actor.containerMenu instanceof MahjongMenu menu)) return;
+		BlockPos pos = menu.getTablePos();
+		for(ServerPlayer p : actor.server.getPlayerList().getPlayers()){
+			if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
+				sendWinGameUpdate(p, game);
 			}
 		}
 	}

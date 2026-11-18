@@ -22,4 +22,5 @@ public class ModPackets {
     public static final ResourceLocation LOBBY_SEAT_PACKET = RiichiMahjong.id("lobby_seat");
     public static final ResourceLocation DEBUG_RESET_PACKET = RiichiMahjong.id("debug_reset");
     public static final ResourceLocation PENDING_CALL_PACKET = RiichiMahjong.id("pending_call");
+    public static final ResourceLocation WIN_GAME_UPDATE_PACKET = RiichiMahjong.id("win_game_update");
 }

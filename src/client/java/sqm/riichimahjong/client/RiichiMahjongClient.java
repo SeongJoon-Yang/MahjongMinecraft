@@ -30,7 +30,6 @@ public class RiichiMahjongClient implements ClientModInitializer {
 				newDiscarded.add(Tile.readFromBuf(buf));
 			}
 
-			// 디버그용 나중에 수정될 수 있음
 			int seatCount = buf.readInt();
 			List<List<Tile>> allDiscarded = new ArrayList<>();
 			for(int i=0;i<seatCount;i++){
@@ -68,11 +67,6 @@ public class RiichiMahjongClient implements ClientModInitializer {
 			for(int i=0;i<doraCount;i++){
 				newDoraIndicator.add(Tile.readFromBuf(buf));
 			}
-			int uraDoraCount = buf.readInt();
-			List<Tile> newUraDoraIndicator = new ArrayList<>();
-			for(int i=0;i<uraDoraCount;i++){
-				newUraDoraIndicator.add(Tile.readFromBuf(buf));
-			}
 
 			boolean handMakeUp = buf.readBoolean();
 			boolean gameEnd = buf.readBoolean();
@@ -83,22 +77,8 @@ public class RiichiMahjongClient implements ClientModInitializer {
 			int dealerSeat = buf.readInt();
 			boolean myCallPending = buf.readBoolean();
 
-			int lastWinSeat = buf.readInt();
-			int lastWinHan = buf.readInt();
-			int lastWinFu = buf.readInt();
-			int lastWinPoints = buf.readInt();
-			String lastWinLabel = buf.readUtf();
-
 			boolean hasWinningTile = buf.readBoolean();
 			Tile winningTile = hasWinningTile ? Tile.readFromBuf(buf) : null;
-
-			int yakuSize = buf.readInt();
-			List<String> yakuList = new ArrayList<>();
-			List<Integer> yakuHanList = new ArrayList<>();
-			for(int i=0;i<yakuSize;i++){
-				yakuList.add(buf.readUtf());
-				yakuHanList.add(buf.readInt());
-			}
 
 			boolean canRiichi = buf.readBoolean();
 			boolean canPon = buf.readBoolean();
@@ -153,7 +133,6 @@ public class RiichiMahjongClient implements ClientModInitializer {
 					mahjongMenu.updateRoundWind(roundWind);
 					mahjongMenu.setFuriten(isFuriten);
 					mahjongMenu.updateDora(newDoraIndicator);
-					mahjongMenu.updateUraDora(newUraDoraIndicator);
 					mahjongMenu.setHandMakeUp(handMakeUp);
 					mahjongMenu.setGameEnd(gameEnd);
 					mahjongMenu.setMatchOver(matchOver);
@@ -162,9 +141,7 @@ public class RiichiMahjongClient implements ClientModInitializer {
 					mahjongMenu.setTurnOrder(turnOrder);
 					mahjongMenu.setDealerSeat(dealerSeat);
 					mahjongMenu.setMyCallPending(myCallPending);
-					mahjongMenu.setLastWins(lastWinSeat,lastWinHan,lastWinFu,lastWinPoints,lastWinLabel);
 					mahjongMenu.setWinningTile(winningTile);
-					mahjongMenu.setYakuAndHan(yakuList, yakuHanList);
 					mahjongMenu.setCallOptions(canRiichi,canPon,canDaiminkan,chiOptions,ankanOptions,kakanOptions);
 					mahjongMenu.setWinOptions(canTsumo, canRon);
 					mahjongMenu.setAbortiveDraw(canDeclareKyuushu);
@@ -174,11 +151,69 @@ public class RiichiMahjongClient implements ClientModInitializer {
 					String label = "doraIndicator : ";
 					for(Tile t : newDoraIndicator) label += t.getTextureId() + " ";
 					RiichiMahjong.LOGGER.info(label);
+				}
+			});
+		}));
+
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.WIN_GAME_UPDATE_PACKET,((client, handler, buf, responseSender) -> {
+			int lastWinSeat = buf.readInt();
+
+			if(lastWinSeat < 0) return;
+
+			int winnerHandSize = buf.readInt();
+			List<Tile> winnerHand = new ArrayList<>();
+			for(int i=0;i<winnerHandSize;i++){
+				winnerHand.add(Tile.readFromBuf(buf));
+			}
+
+			int winnerMeldSize = buf.readInt();
+			List<List<Tile>> newWinnersMelds = new ArrayList<>();
+			List<MeldType> newWinnersMeldTypes = new ArrayList<>();
+			for(int i=0;i<winnerMeldSize;i++){
+				MeldType type = buf.readEnum(MeldType.class);
+				int tileCount = buf.readInt();
+				List<Tile> meld = new ArrayList<>();
+				for(int j=0;j<tileCount;j++){
+					meld.add(Tile.readFromBuf(buf));
+				}
+				newWinnersMelds.add(meld);
+				newWinnersMeldTypes.add(type);
+			}
+
+			int uraDoraCount = buf.readInt();
+			List<Tile> newUraDoraIndicator = new ArrayList<>();
+			for(int i=0;i<uraDoraCount;i++){
+				newUraDoraIndicator.add(Tile.readFromBuf(buf));
+			}
+
+			int lastWinHan = buf.readInt();
+			int lastWinFu = buf.readInt();
+			int lastWinPoints = buf.readInt();
+			String lastWinLabel = buf.readUtf();
+
+			int yakuSize = buf.readInt();
+			List<String> yakuList = new ArrayList<>();
+			List<Integer> yakuHanList = new ArrayList<>();
+			for(int i=0;i<yakuSize;i++){
+				yakuList.add(buf.readUtf());
+				yakuHanList.add(buf.readInt());
+			}
+
+			client.execute(() -> {
+				if(client.player.containerMenu instanceof MahjongMenu mahjongMenu) {
+					mahjongMenu.updateWinnerTiles(winnerHand, newWinnersMelds, newWinnersMeldTypes);
+					mahjongMenu.updateUraDora(newUraDoraIndicator);
+					mahjongMenu.setLastWins(lastWinSeat, lastWinHan, lastWinFu, lastWinPoints, lastWinLabel);
+					mahjongMenu.setYakuAndHan(yakuList, yakuHanList);
 
 					String ulabel = "uraDoraIndicator : ";
-					for(Tile t : newUraDoraIndicator) ulabel += t.getTextureId() + " ";
+					for (Tile t : newUraDoraIndicator) ulabel += t.getTextureId() + " ";
 					RiichiMahjong.LOGGER.info(ulabel);
 				}
+				// MahjongTableBlock에서 보낸 패킷이 작동하지 않음
+//				}else{
+//					RiichiMahjong.LOGGER.info("not MahjongMenu but why");	// 패킷은 잘 전달되고 execute까지 도달하지만 MahjongMenu가 아니라고 판단.
+//				}
 			});
 		}));
 

@@ -113,11 +113,6 @@ public class MahjongTableBlock extends Block {
                     List<Tile> doraIndicators = finalGame.getRevealedDoraIndicators();
                     buf.writeInt(doraIndicators.size());
                     for(Tile t : doraIndicators) t.writeToBuf(buf);
-                    List<Tile> uraDoraIndicators = (finalGame.isGameEnd() && finalGame.isWin() && finalGame.isRiichi(finalSeat))
-                            ? finalGame.getRevealedUraDoraIndicators()
-                            : new ArrayList<>();
-                    buf.writeInt(uraDoraIndicators.size());
-                    for(Tile t: uraDoraIndicators) t.writeToBuf(buf);
 
                     buf.writeBlockPos(pos);
                     buf.writeBoolean(finalGame.isHandMakeUp());
@@ -129,22 +124,9 @@ public class MahjongTableBlock extends Block {
                     buf.writeInt(finalGame.getDealerSeat());
                     buf.writeBoolean(finalGame.getCallChoices()[playerSeat] == CallChoice.PENDING);
 
-                    buf.writeInt(finalGame.getWinSeat());
-                    buf.writeInt(finalGame.getWinHan());
-                    buf.writeInt(finalGame.getWinFu());
-                    buf.writeInt(finalGame.getWinScores());
-                    buf.writeUtf(finalGame.getWinLabel());
-
                     Tile winningTile = finalGame.getWinningTile();
                     buf.writeBoolean(winningTile != null);
                     if(winningTile != null) winningTile.writeToBuf(buf);
-
-                    List<Map.Entry<String,Integer>> entries = finalGame.getYakuResultEntries(finalSeat);
-                    buf.writeInt(entries.size());
-                    for(Map.Entry<String,Integer> e : entries){
-                        buf.writeUtf(e.getKey());
-                        buf.writeInt(e.getValue());
-                    }
 
                     buf.writeBoolean(finalGame.canDeclareRiichi(finalSeat));
                     buf.writeBoolean(finalGame.canPon(finalSeat));
@@ -182,6 +164,53 @@ public class MahjongTableBlock extends Block {
                     int[] settleScores = finalGame.getSettleScoreBySeat();
                     for(int i=0;i<4;i++){
                         buf.writeInt(settleScores[i]);
+                    }
+
+                    boolean winGameEnd = finalGame.isGameEnd() && finalGame.isWin();
+                    buf.writeBoolean(winGameEnd);
+                    if(winGameEnd){
+                        // 패킷을 보내도 의도한 대로 작동하지 않음
+                        // RiichiMahjong.sendWinGameUpdate(player,finalGame);
+
+                        int lastWinSeat = finalGame.getWinSeat();
+                        buf.writeInt(lastWinSeat);
+
+                        if(lastWinSeat < 0) return;
+
+                        finalGame.switchToSeat(lastWinSeat);
+
+                        buf.writeInt(finalGame.getHand().size());
+                        for(Tile tile : finalGame.getHand()){
+                            tile.writeToBuf(buf);
+                        }
+
+                        buf.writeInt(finalGame.getMelds().size());
+                        for(int i=0;i<finalGame.getMelds().size();i++){
+                            buf.writeEnum(finalGame.getMeldTypes().get(i));
+                            List<Tile> meld = finalGame.getMelds().get(i);
+                            buf.writeInt(meld.size());
+                            for(Tile t : meld){
+                                t.writeToBuf(buf);
+                            }
+                        }
+
+                        List<Tile> uraDoraIndicators = (finalGame.isGameEnd() && finalGame.isWin() && finalGame.isRiichi(lastWinSeat))
+                                ? finalGame.getRevealedUraDoraIndicators()
+                                : new ArrayList<>();
+                        buf.writeInt(uraDoraIndicators.size());
+                        for(Tile tile : uraDoraIndicators) tile.writeToBuf(buf);
+
+                        buf.writeInt(finalGame.getWinHan());
+                        buf.writeInt(finalGame.getWinFu());
+                        buf.writeInt(finalGame.getWinScores());
+                        buf.writeUtf(finalGame.getWinLabel());
+
+                        List<Map.Entry<String,Integer>> entries = finalGame.getYakuResultEntries(lastWinSeat);
+                        buf.writeInt(entries.size());
+                        for(Map.Entry<String,Integer> e : entries){
+                            buf.writeUtf(e.getKey());
+                            buf.writeInt(e.getValue());
+                        }
                     }
                 }
             });

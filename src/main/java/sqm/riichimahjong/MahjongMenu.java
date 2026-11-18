@@ -23,6 +23,11 @@ public class MahjongMenu extends AbstractContainerMenu {
     private List<List<Tile>> allDiscarded = new ArrayList<>();
     private final List<List<Tile>> melds = new ArrayList<>();
     private final List<MeldType> meldTypes = new ArrayList<>();
+
+    private final List<Tile> winnerHand = new ArrayList<>();
+    private final List<List<Tile>> winnerMelds = new ArrayList<>();
+    private final List<MeldType> winnerMeldTypes = new ArrayList<>();
+
     private final List<Tile> doraIndicatorPool = new ArrayList<>();
     private final List<Tile> uraDoraIndicatorPool = new ArrayList<>();
     private int[] scoreBySeat = new int[]{25000, 25000, 25000, 25000};
@@ -41,8 +46,10 @@ public class MahjongMenu extends AbstractContainerMenu {
     private int wallSize = 69;
     private int roundWind = 0;
     private boolean isFuriten = false;
-    private List<String> yaku;
-    private List<Integer> han;
+    // WIN_GAME_UPDATE_PACKET을 보냈을 때 null 상태로 오류가 나 추가
+    private List<String> yaku = new ArrayList<>();
+    private List<Integer> han = new ArrayList<>();
+
     private Tile winningTile = null;
     private int lastWinSeat = -1;
     private int lastWinHan = 0;
@@ -132,10 +139,6 @@ public class MahjongMenu extends AbstractContainerMenu {
         for(int i=0;i<doraCount;i++){
             this.doraIndicatorPool.add(Tile.readFromBuf(buf));
         }
-        int uraDoraCount = buf.readInt();
-        for(int i=0;i<uraDoraCount;i++){
-            this.uraDoraIndicatorPool.add(Tile.readFromBuf(buf));
-        }
 
         this.tablePos = buf.readBlockPos();
         this.handMakeUp = buf.readBoolean();
@@ -147,25 +150,8 @@ public class MahjongMenu extends AbstractContainerMenu {
         this.dealerSeat = buf.readInt();
         this.myCallPending = buf.readBoolean();
 
-        this.lastWinSeat = buf.readInt();
-        this.lastWinHan = buf.readInt();
-        this.lastWinFu = buf.readInt();
-        this.lastWinScores = buf.readInt();
-        this.lastWinLabel = buf.readUtf();
-
         boolean hasWinningTile = buf.readBoolean();
         this.winningTile = hasWinningTile ? Tile.readFromBuf(buf) : null;
-
-        int yakuSize = buf.readInt();
-        List<Tile> ignore = null;   // 실수 방지용 메모라는데 뭔지 모르겠다. 실제로는 List<String> 사용하라고 하네
-        List<String> yakuList = new ArrayList<>();
-        List<Integer> yakuHanList = new ArrayList<>();
-        for(int i=0;i<yakuSize;i++){
-            yakuList.add(buf.readUtf());
-            yakuHanList.add(buf.readInt());
-        }
-        this.yaku = yakuList;
-        this.han = yakuHanList;
 
         this.canRiichi = buf.readBoolean();
         this.canPon = buf.readBoolean();
@@ -198,21 +184,59 @@ public class MahjongMenu extends AbstractContainerMenu {
         for(int i=0;i<4;i++){
             this.settleScoreBySeat[i] = buf.readInt();
         }
+
+        boolean winGameEnd = buf.readBoolean();
+        if(winGameEnd){
+            this.lastWinSeat = buf.readInt();
+
+            if(lastWinSeat < 0) return;
+
+            int winnerHandSize = buf.readInt();
+            for(int i=0;i<winnerHandSize;i++){
+                this.winnerHand.add(Tile.readFromBuf(buf));
+            }
+
+            int winnerMeldSize = buf.readInt();
+            for(int i=0;i<winnerMeldSize;i++){
+                MeldType type = buf.readEnum(MeldType.class);
+                int tileCount = buf.readInt();
+                List<Tile> meld = new ArrayList<>();
+                for(int j=0;j<tileCount;j++){
+                    meld.add(Tile.readFromBuf(buf));
+                }
+                this.winnerMelds.add(meld);
+                this.winnerMeldTypes.add(type);
+            }
+
+            int uraDoraCount = buf.readInt();
+            for(int i=0;i<uraDoraCount;i++){
+                this.uraDoraIndicatorPool.add(Tile.readFromBuf(buf));
+            }
+
+            this.lastWinHan = buf.readInt();
+            this.lastWinFu = buf.readInt();
+            this.lastWinScores = buf.readInt();
+            this.lastWinLabel = buf.readUtf();
+
+            int yakuSize = buf.readInt();
+            for(int i=0;i<yakuSize;i++){
+                this.yaku.add(buf.readUtf());
+                this.han.add(buf.readInt());
+            }
+        }
     }
 
     public MahjongGame.GameState getGameState() { return state; }
 
-    public List<Tile> getPlayerHand(){
-        return playerHand;
-    }
+    public List<Tile> getPlayerHand(){ return playerHand; }
 
-    public List<Tile> getDiscardedTiles(){
-        return discardedTiles;
-    }
+    public List<Tile> getDiscardedTiles(){ return discardedTiles; }
 
-    public BlockPos getTablePos(){
-        return tablePos;
-    }
+    public List<Tile> getWinnerHand() { return winnerHand; }
+
+    public List<List<Tile>> getWinnermelds() { return winnerMelds; }
+
+    public BlockPos getTablePos(){ return tablePos; }
 
     public List<String> getYaku() { return yaku; }
 
@@ -342,6 +366,15 @@ public class MahjongMenu extends AbstractContainerMenu {
         melds.addAll(newMelds);
         meldTypes.clear();
         meldTypes.addAll(newTypes);
+    }
+
+    public void updateWinnerTiles(List<Tile> winnerHand, List<List<Tile>> newWinnersMelds, List<MeldType> newWinnersMeldTypes){
+        this.winnerHand.clear();
+        this.winnerHand.addAll(winnerHand);
+        winnerMelds.clear();
+        winnerMelds.addAll(newWinnersMelds);
+        winnerMeldTypes.clear();
+        winnerMeldTypes.addAll(newWinnersMeldTypes);
     }
 
     public void updateWallSize(int wallSize){

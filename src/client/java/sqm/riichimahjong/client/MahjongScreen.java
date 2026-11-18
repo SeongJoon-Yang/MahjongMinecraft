@@ -192,7 +192,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 guiGraphics.pose().translate(0, 0, 10);
 
                 if (resultPage == 0) {
-                    renderResultPage(guiGraphics, hand);
+                    renderResultPage(guiGraphics);
                 } else if (resultPage == 1) {
                     renderSettleScorePage(guiGraphics);
                 } else {
@@ -912,7 +912,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         drawDora(guiGraphics,px(-8),py(16));
     }
 
-    private void renderResultPage(GuiGraphics guiGraphics, List<Tile> hand){
+    private void renderResultPage(GuiGraphics guiGraphics){
         String winText;
         if(this.menu.isWin()){
             winText = this.menu.isTsumo() ? "쯔모" : "론";
@@ -939,29 +939,29 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         drawTextAt(guiGraphics, winText, endCenterX, endCenterY, textColor);
 
         if(this.menu.isWin()) {
-            List<Tile> winningHand = new ArrayList<>(hand);
+            List<Tile> winnerHand = this.menu.getWinnerHand();
 
-            int winningHandX = px(128) - (sx(TILE_WIDTH) * hand.size() + sx(5)) / 2;
+            int winningHandX = px(128) - (sx(TILE_WIDTH) * winnerHand.size() + sx(5)) / 2;
             int winningHandY = py(15);
 
             Tile winningTile = this.menu.getWinningTile();
             Tile separated = null;
             if (winningTile != null) {
-                for (int i = winningHand.size() - 1; i >= 0; i--) {
-                    Tile t = winningHand.get(i);
+                for (int i = winnerHand.size() - 1; i >= 0; i--) {
+                    Tile t = winnerHand.get(i);
                     if (t.equals(winningTile) && t.isRed() == winningTile.isRed()) {
-                        separated = winningHand.remove(i);
+                        separated = winnerHand.remove(i);
                         break;
                     }
                 }
             }
 
-            for(int i=0;i<winningHand.size();i++){
-                Tile t = winningHand.get(i);
+            for(int i=0;i<winnerHand.size();i++){
+                Tile t = winnerHand.get(i);
                 guiGraphics.blit(getTileTexture(t),winningHandX + sx(TILE_WIDTH) * i, winningHandY, 0, 0, sx(TILE_WIDTH),sx(TILE_HEIGHT),sx(TILE_WIDTH),sx(TILE_HEIGHT));
             }
             if(separated != null) {
-                guiGraphics.blit(getTileTexture(separated), winningHandX + sx(TILE_WIDTH) * hand.size() + sx(5), winningHandY, 0, 0, sx(TILE_WIDTH), sx(TILE_HEIGHT), sx(TILE_WIDTH), sx(TILE_HEIGHT));
+                guiGraphics.blit(getTileTexture(separated), winningHandX + sx(TILE_WIDTH) * winnerHand.size() + sx(5), winningHandY, 0, 0, sx(TILE_WIDTH), sx(TILE_HEIGHT), sx(TILE_WIDTH), sx(TILE_HEIGHT));
             }
 
             drawDora(guiGraphics,px(80),py(50));
