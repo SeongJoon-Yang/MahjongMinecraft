@@ -1,3 +1,5 @@
+# <center> 🚧 Work in Progress </center>
+
 # Riichi Mahjong Mod
 
 English | [한국어](README_ko.md)
