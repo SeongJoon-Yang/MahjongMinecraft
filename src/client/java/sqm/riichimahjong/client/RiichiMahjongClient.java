@@ -121,6 +121,11 @@ public class RiichiMahjongClient implements ClientModInitializer {
 				settleScores[i] = buf.readInt();
 			}
 
+			int[] riichiDiscardIndexBySeat = new int[4];
+			for(int i=0;i<4;i++){
+				riichiDiscardIndexBySeat[i] = buf.readInt();
+			}
+
 			client.execute(()->{
 				if(client.player.containerMenu instanceof MahjongMenu mahjongMenu){
 					mahjongMenu.setGameState(state);
@@ -128,7 +133,7 @@ public class RiichiMahjongClient implements ClientModInitializer {
 					mahjongMenu.updateDiscarded(newDiscarded);
 					mahjongMenu.setAllDiscarded(allDiscarded);
 					mahjongMenu.updateMelds(newMelds, newMeldTypes);
-					mahjongMenu.updateRiichi(isRiichi);
+					mahjongMenu.updateRiichi(isRiichi, riichiDiscardIndexBySeat);
 					mahjongMenu.updateWallSize(wallSize);
 					mahjongMenu.updateRoundWind(roundWind);
 					mahjongMenu.setFuriten(isFuriten);

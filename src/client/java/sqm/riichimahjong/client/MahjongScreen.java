@@ -1,5 +1,6 @@
 package sqm.riichimahjong.client;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.math.Axis;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -10,11 +11,14 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import org.joml.Quaternionf;
 import sqm.riichimahjong.*;
 
@@ -108,6 +112,9 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
     private final float[] rotations = {0f, -90f, 180f, 90f};
 
+    private RemotePlayer fakeWinner;
+    private UUID fakeWinnerKey;
+
     public MahjongScreen(MahjongMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
     }
@@ -185,7 +192,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             renderWaitingPage(guiGraphics);
         }
         if(state == MahjongGame.GameState.PLAYING) {
-            renderMahjongPage(guiGraphics, mouseX, mouseY, hand);
+            renderMahjongPage(guiGraphics, mouseX, mouseY, hand, mySeat);
 
             if (this.menu.isGameEnd()) {
                 guiGraphics.pose().pushPose();
@@ -194,7 +201,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 if (resultPage == 0) {
                     renderResultPage(guiGraphics);
                 } else if (resultPage == 1) {
-                    renderSettleScorePage(guiGraphics);
+                    renderSettleScorePage(guiGraphics, mySeat);
                 } else {
                     renderMatchOverPage(guiGraphics);
                 }
@@ -658,7 +665,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         }
     }
 
-    private void renderMahjongPage(GuiGraphics guiGraphics, int mouseX, int mouseY, List<Tile> hand){
+    private void renderMahjongPage(GuiGraphics guiGraphics, int mouseX, int mouseY, List<Tile> hand, int mySeat){
         if(!this.menu.canRiichi()) riichiMode = false;
         if(!this.menu.isGameEnd()) nextRoundSent = false;
         if(this.menu.isGameEnd()){
@@ -735,6 +742,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         drawText(guiGraphics,wallSize,128-this.font.width(wallSize)/2,100+3,0x666666);
 
         for(int seat=0;seat<allDiscarded.size();seat++){
+            int rel = (seat - mySeat + 4) % 4;
             List<Tile> discardedBySeat = allDiscarded.get(seat);
 
             int numberCount = 0;
@@ -761,7 +769,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(centerX, centerY, 0);
-            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotations[seat]));
+            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(rotations[rel]));
             guiGraphics.pose().translate(-centerX, -centerY, 0);
 
             for(int i=0;i<discardedBySeat.size();i++){
@@ -785,9 +793,6 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 guiGraphics.blit(getNumberTexture(number),x,y,0,0,scoreTextureWidth,scoreTextureHeight,scoreTextureWidth,scoreTextureHeight);
             }while(scoreTemp != 0);
             if(isMinus) guiGraphics.blit(MINUS_DIGIT_TEXTURE,scoreX,scoreY,0,0,scoreTextureWidth,scoreTextureHeight,scoreTextureWidth,scoreTextureHeight);
-
-            guiGraphics.pose().popPose();
-            guiGraphics.pose().pushPose();
 
             boolean[] isRiichi = this.menu.isRiichi();
             if(isRiichi[seat]) guiGraphics.blit(new ResourceLocation("riichi-mahjong","textures/gui/riichi_stick.png"),
@@ -914,6 +919,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
     private void renderResultPage(GuiGraphics guiGraphics){
         String winText;
+
         if(this.menu.isWin()){
             winText = this.menu.isTsumo() ? "쯔모" : "론";
         }else{
@@ -939,18 +945,20 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         drawTextAt(guiGraphics, winText, endCenterX, endCenterY, textColor);
 
         if(this.menu.isWin()) {
-            List<Tile> winnerHand = this.menu.getWinnerHand();
+            int winnerSeat = this.menu.getWinSeat();
+            List<Tile> winnerHand = new ArrayList<>(this.menu.getWinnerHand());     // 이렇게 써도 됨?
+            List<List<Tile>> winnerMelds = this.menu.getWinnerMelds();
 
-            int winningHandX = px(128) - (sx(TILE_WIDTH) * winnerHand.size() + sx(5)) / 2;
+            int winningHandX = px(32);
             int winningHandY = py(15);
 
             Tile winningTile = this.menu.getWinningTile();
-            Tile separated = null;
+
             if (winningTile != null) {
                 for (int i = winnerHand.size() - 1; i >= 0; i--) {
                     Tile t = winnerHand.get(i);
                     if (t.equals(winningTile) && t.isRed() == winningTile.isRed()) {
-                        separated = winnerHand.remove(i);
+                        winnerHand.remove(i);
                         break;
                     }
                 }
@@ -960,26 +968,37 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 Tile t = winnerHand.get(i);
                 guiGraphics.blit(getTileTexture(t),winningHandX + sx(TILE_WIDTH) * i, winningHandY, 0, 0, sx(TILE_WIDTH),sx(TILE_HEIGHT),sx(TILE_WIDTH),sx(TILE_HEIGHT));
             }
-            if(separated != null) {
-                guiGraphics.blit(getTileTexture(separated), winningHandX + sx(TILE_WIDTH) * winnerHand.size() + sx(5), winningHandY, 0, 0, sx(TILE_WIDTH), sx(TILE_HEIGHT), sx(TILE_WIDTH), sx(TILE_HEIGHT));
+            int meldTileCount = 0;
+            for(int i=0;i<winnerMelds.size();i++){
+                List<Tile> meld = winnerMelds.get(i);
+                for(int j=0;j<meld.size();j++){
+                    Tile tile = meld.get(j);
+                    guiGraphics.blit(getTileTexture(tile),winningHandX + sx(TILE_WIDTH) * (winnerHand.size() + meldTileCount) + sx(4),winningHandY, 0, 0, sx(TILE_WIDTH),sx(TILE_HEIGHT),sx(TILE_WIDTH),sx(TILE_HEIGHT));
+                    meldTileCount++;
+                }
+            }
+            // separated 버리고 winningTile 썼는데 이래도 됨?
+            if(winningTile != null) {
+                guiGraphics.blit(getTileTexture(winningTile), winningHandX + sx(TILE_WIDTH) * (winnerHand.size() + meldTileCount) + sx(8), winningHandY, 0, 0, sx(TILE_WIDTH), sx(TILE_HEIGHT), sx(TILE_WIDTH), sx(TILE_HEIGHT));
             }
 
             drawDora(guiGraphics,px(80),py(50));
             drawUraDora(guiGraphics,px(86),py(50));
 
-            LocalPlayer player = Minecraft.getInstance().player;
-            if(player != null){
+            LivingEntity winner = getWinnerEntity(winnerSeat);
+            // LocalPlayer player = Minecraft.getInstance().player;
+            if(winner != null){
                 // 지금 실제 자세 저장
-                float prevYBodyRot = player.yBodyRot;
-                float prevYRot = player.getYRot();
-                float prevXRot = player.getXRot();
-                float prevYHeadRot = player.yHeadRot;
+                float prevYBodyRot = winner.yBodyRot;
+                float prevYRot = winner.getYRot();
+                float prevXRot = winner.getXRot();
+                float prevYHeadRot = winner.yHeadRot;
 
                 // 그릴 때 고정값으로 덮어쓰기
-                player.yBodyRot = 180f;
-                player.setYRot(180f);
-                player.setXRot(0f);
-                player.yHeadRot = 180f;
+                winner.yBodyRot = 180f;
+                winner.setYRot(180f);
+                winner.setXRot(0f);
+                winner.yHeadRot = 180f;
 
                 int charX = px(32);
                 int charY = py(125);
@@ -990,14 +1009,14 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                         .rotateY((float) Math.toRadians(20));
 
                 InventoryScreen.renderEntityInInventory(
-                        guiGraphics, charX, charY, charScale, bodyRotation, null, player
+                        guiGraphics, charX, charY, charScale, bodyRotation, null, winner
                 );
 
                 // 그린 후 원래 자세로 복구
-                player.yBodyRot = prevYBodyRot;
-                player.setYRot(prevYRot);
-                player.setXRot(prevXRot);
-                player.yHeadRot = prevYHeadRot;
+                winner.yBodyRot = prevYBodyRot;
+                winner.setYRot(prevYRot);
+                winner.setXRot(prevXRot);
+                winner.yHeadRot = prevYHeadRot;
             }
         }
 
@@ -1056,7 +1075,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         }
     }
 
-    private void renderSettleScorePage(GuiGraphics guiGraphics){
+    private void renderSettleScorePage(GuiGraphics guiGraphics, int mySeat){
         guiGraphics.fill(tableX, tableY, tableX + tableW, tableY + tableH, 0xCC000000);
 
         int scoreOffset = sx(48);
@@ -1069,6 +1088,8 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         boolean isScoreMinus, isSettleScoreMinus;
 
         for(int seat=0;seat<4;seat++){
+            int rel = (seat - mySeat + 4) % 4;
+
             scoreTemp = scoreBySeat[seat];
             settleScoreTemp = settleScoreBySeat[seat];
             scoreCount = 0;
@@ -1083,7 +1104,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                 settleScoreTemp = 0;
             }
 
-            switch(seat){
+            switch(rel){
                 case 1 ->{
                     scorePanelX = px(128) + scoreOffset;
                     scorePanelY = py(100) - scorePanelH / 2;
@@ -1264,6 +1285,26 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
             guiGraphics.fill(confirmButtonX - sx(5), confirmButtonY - sx(4), confirmButtonX + confirmWidth + sx(5), confirmButtonY + sx(12), 0xCC000000);
             drawTextAt(guiGraphics, confirmText, confirmButtonX, confirmButtonY, nextRoundSent ? 0x888888 : 0xFFFFFF);
         }
+    }
+
+    private LivingEntity getWinnerEntity(int winnerSeat){
+        UUID winnerUUID = this.menu.getSeatUuid(winnerSeat);
+
+        if(winnerUUID != null && this.minecraft.level != null){
+            Player winner = this.minecraft.level.getPlayerByUUID(winnerUUID);
+            if(winner != null) return winner;
+        }
+
+        UUID key = winnerUUID != null ? winnerUUID : DUMMY_UUIDS[winnerSeat];
+        if(fakeWinner == null || !key.equals(fakeWinnerKey)){
+            PlayerInfo info = this.minecraft.getConnection() != null
+                    ? this.minecraft.getConnection().getPlayerInfo(key) : null;
+            GameProfile profile = info != null ? info.getProfile()
+                    : new GameProfile(key, getSeatName(winnerSeat));
+            fakeWinner = new RemotePlayer(this.minecraft.level, profile);
+            fakeWinnerKey = key;
+        }
+        return fakeWinner;
     }
 
     private PlayerInfo getSeatInfo(int seat){

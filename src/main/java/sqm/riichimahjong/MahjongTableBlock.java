@@ -166,6 +166,11 @@ public class MahjongTableBlock extends Block {
                         buf.writeInt(settleScores[i]);
                     }
 
+                    int[] riichiDiscardIndexBySeat = finalGame.getRiichiDiscardIndexBySeat();
+                    for(int i=0;i<4;i++){
+                        buf.writeInt(riichiDiscardIndexBySeat[i]);
+                    }
+
                     boolean winGameEnd = finalGame.isGameEnd() && finalGame.isWin();
                     buf.writeBoolean(winGameEnd);
                     if(winGameEnd){

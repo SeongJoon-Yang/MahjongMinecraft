@@ -11,6 +11,7 @@ public class MahjongGame {
     private final List<Tile>[] discardHistoryBySeat = new List[4];  // 후리텐 체크용
     private final List<List<Tile>>[] meldsBySeat = new List[4];
     private final List<MeldType>[] meldTypesBySeat = new List[4];
+    private int[] riichiDiscardIndexBySeat = new int[4];
     private int[] scoreBySeat = new int[4];
     private int[] settleScoreBySeat = new int[4];
     private boolean[] isMenzenBySeat = {true, true, true, true};
@@ -152,6 +153,7 @@ public class MahjongGame {
             meldsBySeat[i] = new ArrayList<>();
             meldTypesBySeat[i] = new ArrayList<>();
             kuikaeForbiddenBySeat[i] = new ArrayList<>();
+            riichiDiscardIndexBySeat[i] = -1;
             scoreBySeat[i] = 25000;
             settleScoreBySeat[i] = 0;
         }
@@ -299,6 +301,7 @@ public class MahjongGame {
         turnOrder = ++turnOrder % 4;
         isRinshan = false;
         isRiichiBySeat[seat] = true;
+        riichiDiscardIndexBySeat[seat] = discardedBySeat[seat].size() - 1;      // discarded에 버림패 추가 후 index 값 대입.
         ippatsuValidBySeat[seat] = true;
         scoreBySeat[seat] -= 1000;
         riichiStick++;
@@ -1755,6 +1758,7 @@ public class MahjongGame {
             tempFuritenBySeat[seat] = false;
             riichiFuritenBySeat[seat] = false;
             settleScoreBySeat[seat] = 0;
+            riichiDiscardIndexBySeat[seat] = -1;
         }
 
         kanCount = 0;
@@ -2120,6 +2124,7 @@ public class MahjongGame {
         }
         tag.putIntArray("scoreBySeat",scoreBySeat);
         tag.putIntArray("settleScoreBySeat",settleScoreBySeat);
+        tag.putIntArray("riichiDiscardIndexBySeat",riichiDiscardIndexBySeat);
         tag.putIntArray("isDoubleRiichi", doubleRiichiInt);
         tag.putIntArray("isMenzenBySeat", menzenInt);
         tag.putIntArray("isRiichiBySeat", riichiInt);
@@ -2202,6 +2207,7 @@ public class MahjongGame {
 
         game.scoreBySeat = tag.getIntArray("scoreBySeat");
         game.settleScoreBySeat = tag.getIntArray("settleScoreBySeat");
+        game.riichiDiscardIndexBySeat = tag.getIntArray("riichiDiscardIndexBySeat");
         int[] doubleRiichiInt = tag.getIntArray("isDoubleRiichi");
         for(int i=0;i<4 && i<doubleRiichiInt.length;i++) game.isDoubleRiichi[i] = doubleRiichiInt[i] == 1;
         int[] menzenInt = tag.getIntArray("isMenzenBySeat");
@@ -2581,6 +2587,8 @@ public class MahjongGame {
     public int getCanCallCount() { return canCallCount; }
 
     public int getDeclareCallCount() { return declareCallCount; }
+
+    public int[] getRiichiDiscardIndexBySeat() { return riichiDiscardIndexBySeat; }
 
     public CallChoice[] getCallChoices(){ return callChoices.clone(); }
 

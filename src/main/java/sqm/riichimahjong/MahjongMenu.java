@@ -33,6 +33,7 @@ public class MahjongMenu extends AbstractContainerMenu {
     private int[] scoreBySeat = new int[]{25000, 25000, 25000, 25000};
     private int[] settleScoreBySeat = new int[]{0, 0, 0, 0};
     private boolean[] isRiichi = new boolean[4];
+    private int[] riichiDiscardIndexBySeat = new int[]{-1, -1, -1, -1};
 
     private final BlockPos tablePos;
     private boolean handMakeUp = true;
@@ -185,6 +186,10 @@ public class MahjongMenu extends AbstractContainerMenu {
             this.settleScoreBySeat[i] = buf.readInt();
         }
 
+        for(int i=0;i<4;i++){
+            this.riichiDiscardIndexBySeat[i] = buf.readInt();
+        }
+
         boolean winGameEnd = buf.readBoolean();
         if(winGameEnd){
             this.lastWinSeat = buf.readInt();
@@ -234,7 +239,7 @@ public class MahjongMenu extends AbstractContainerMenu {
 
     public List<Tile> getWinnerHand() { return winnerHand; }
 
-    public List<List<Tile>> getWinnermelds() { return winnerMelds; }
+    public List<List<Tile>> getWinnerMelds() { return winnerMelds; }
 
     public BlockPos getTablePos(){ return tablePos; }
 
@@ -291,6 +296,8 @@ public class MahjongMenu extends AbstractContainerMenu {
     public int[] getScoreBySeat(){ return scoreBySeat; }
 
     public int[] getSettleScoreBySeat() { return settleScoreBySeat; }
+
+    public int[] getRiichiDiscardIndexBySeat() { return riichiDiscardIndexBySeat; }
 
     public boolean canTsumo(){ return canTsumo; }
 
@@ -400,7 +407,10 @@ public class MahjongMenu extends AbstractContainerMenu {
         this.settleScoreBySeat = settleScores;
     }
 
-    public void updateRiichi(boolean[] isRiichi) { this.isRiichi = isRiichi; }
+    public void updateRiichi(boolean[] isRiichi, int[] riichiDiscardIndexBySeat){
+        this.isRiichi = isRiichi;
+        this.riichiDiscardIndexBySeat = riichiDiscardIndexBySeat;
+    }
 
     public void setCallOptions(boolean canRiichi, boolean canPon, boolean canDaiminkan,
                                List<List<Integer>> chiOptions,

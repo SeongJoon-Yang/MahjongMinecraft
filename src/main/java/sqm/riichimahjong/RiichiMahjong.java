@@ -503,6 +503,11 @@ public class RiichiMahjong implements ModInitializer {
 			responseBuf.writeInt(settleScores[i]);
 		}
 
+		int[] riichiDiscardIndexBySeat = game.getRiichiDiscardIndexBySeat();
+		for(int i=0;i<4;i++){
+			responseBuf.writeInt(riichiDiscardIndexBySeat[i]);
+		}
+
 		ServerPlayNetworking.send(player, ModPackets.UPDATE_HAND_PACKET, responseBuf);
 	}
 
