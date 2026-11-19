@@ -99,4 +99,4 @@ Instructions will be added once a playable release is available.
 
 ## License
 
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+This project is licensed under the MIT License.
