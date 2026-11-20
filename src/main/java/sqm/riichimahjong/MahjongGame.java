@@ -11,7 +11,7 @@ public class MahjongGame {
     private final List<Tile>[] discardHistoryBySeat = new List[4];  // 후리텐 체크용
     private final List<List<Tile>>[] meldsBySeat = new List[4];
     private final List<MeldType>[] meldTypesBySeat = new List[4];
-    private int[] riichiDiscardIndexBySeat = new int[4];
+    private int[] riichiDiscardIndexBySeat = new int[]{-1, -1, -1, -1};
     private int[] scoreBySeat = new int[4];
     private int[] settleScoreBySeat = new int[4];
     private boolean[] isMenzenBySeat = {true, true, true, true};
@@ -85,6 +85,8 @@ public class MahjongGame {
 
     private final CallChoice[] callChoices = {CallChoice.NONE, CallChoice.NONE, CallChoice.NONE, CallChoice.NONE};
     private final int[] chiChoiceIndex = {-1, -1, -1, -1};
+
+    private boolean[] callNextRound = {false, false, false, false};
 
     private static final int MAX_KAN = 4;   // 기본값 4, 테스트 시에만 줄이기
 
@@ -231,6 +233,11 @@ public class MahjongGame {
     }
 
     public Tile discardTileAt(int seat, int index){
+        if(turnOrder != seat){
+            RiichiMahjong.LOGGER.info("discardTileAt 실패 : 당신의 턴이 아닙니다");
+            return null;
+        }
+
         switchToSeat(seat);
 
         int expectedSize = 14 - 3 * melds.size();
@@ -243,7 +250,7 @@ public class MahjongGame {
             return null;
         }
 
-        if(turnOrder != seat || isRiichiBySeat[seat]){
+        if(isRiichiBySeat[seat]){
             if(index != expectedSize - 1) return null;
             if(!hand.get(index).equals(drawnTile)) return null;
         }
@@ -1759,6 +1766,7 @@ public class MahjongGame {
             riichiFuritenBySeat[seat] = false;
             settleScoreBySeat[seat] = 0;
             riichiDiscardIndexBySeat[seat] = -1;
+            callNextRound[seat] = false;
         }
 
         kanCount = 0;
@@ -2592,6 +2600,8 @@ public class MahjongGame {
 
     public CallChoice[] getCallChoices(){ return callChoices.clone(); }
 
+    public boolean[] getCallNextRound() { return callNextRound; }
+
     public void setHandMakeUp(boolean handMakeUp) { this.handMakeUp = handMakeUp; }
 
 //    public void resetToPerspective(int seat){
@@ -2623,6 +2633,8 @@ public class MahjongGame {
         this.callChoices[seat] = choice;
         this.chiChoiceIndex[seat] = chiIndex;
     }
+
+    public void setCallNextRound(int seat) { this.callNextRound[seat] = true; }
 
     public boolean declareKyuushuKyuuhai(int seat){
         if(!canDeclareKyuushu(seat)) return false;

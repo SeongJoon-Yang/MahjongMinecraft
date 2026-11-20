@@ -414,7 +414,6 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                                     if (!nextRoundSent) {
                                         nextRoundSent = true;
                                         sendNextRoundPacket();
-                                        resultPage = 0;
                                     }
                                 }
                             }
@@ -667,7 +666,10 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
 
     private void renderMahjongPage(GuiGraphics guiGraphics, int mouseX, int mouseY, List<Tile> hand, int mySeat){
         if(!this.menu.canRiichi()) riichiMode = false;
-        if(!this.menu.isGameEnd()) nextRoundSent = false;
+        if(!this.menu.isGameEnd()) {
+            nextRoundSent = false;
+            resultPage = 0;
+        }
         if(this.menu.isGameEnd()){
             if(!wasGameEnd){
                 resultShownAt = System.currentTimeMillis();
@@ -1196,7 +1198,7 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
                     ,settleScoreX,settleScoreY,0,0,scoreTextureWidth,scoreTextureHeight,scoreTextureWidth,scoreTextureHeight);
         }
 
-        confirmText = "확인";
+        confirmText = nextRoundSent ? "대기 중..." : "확인";
         confirmWidth = textW(confirmText);
         confirmButtonX = panelX + sx(244) - confirmWidth;
         confirmButtonY = py(180);
@@ -1282,7 +1284,9 @@ public class MahjongScreen extends AbstractContainerScreen<MahjongMenu> {
         }
 
         if(hasElapsed(delay)) {
-            guiGraphics.fill(confirmButtonX - sx(5), confirmButtonY - sx(4), confirmButtonX + confirmWidth + sx(5), confirmButtonY + sx(12), 0xCC000000);
+            if(!nextRoundSent) {
+                guiGraphics.fill(confirmButtonX - sx(5), confirmButtonY - sx(4), confirmButtonX + confirmWidth + sx(5), confirmButtonY + sx(12), 0xCC000000);
+            }
             drawTextAt(guiGraphics, confirmText, confirmButtonX, confirmButtonY, nextRoundSent ? 0x888888 : 0xFFFFFF);
         }
     }

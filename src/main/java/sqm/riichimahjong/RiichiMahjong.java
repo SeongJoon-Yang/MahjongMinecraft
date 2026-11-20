@@ -315,12 +315,21 @@ public class RiichiMahjong implements ModInitializer {
 					Integer seat = game.getSeatOf(player.getUUID());
 					if(seat == null) return;
 
+					game.setCallNextRound(seat);
+					boolean[] callNextRound = game.getCallNextRound();
+					for(int i=0;i<4;i++){
+						// 유저가 앉아있는 자리인데 확인을 누르지 않은 경우
+						if(game.isSeatAssigned(i) && !callNextRound[i]){
+							return;
+						}
+					}
+
 					game.nextRound();
 					advanceDummyTurns(game,player,seat, true);
 
 					savedData.setDirty();
 					sendGameUpdateToAll(player,game);
-				}else if(game.isMatchOver()){
+				}else if(game != null && game.isMatchOver()){
 					RiichiMahjong.LOGGER.info("Match is over! minus score!");	// 토비 외의 경우가 있으면 바꿀 것!
 					for(int i=0;i<4;i++){
 						RiichiMahjong.LOGGER.info("seat {} score : {}",i,game.getScoreBySeat()[i]);

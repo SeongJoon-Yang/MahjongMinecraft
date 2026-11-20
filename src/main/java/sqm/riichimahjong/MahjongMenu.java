@@ -435,6 +435,7 @@ public class MahjongMenu extends AbstractContainerMenu {
         this.lastWinScores = lastWinScores;
         this.lastWinLabel = lastWinLabel;
     }
+
     public void setWinningTile(Tile winningTile) { this.winningTile = winningTile; }
 
     public void setAbortiveDraw(boolean canDeclareKyuushu){

@@ -33,15 +33,6 @@ public class MahjongTableBlock extends Block {
             ServerLevel serverLevel = (ServerLevel) level;
             MahjongSavedData savedData = MahjongSavedData.get(serverLevel);
 
-            // ===== 임시 디버그 코드: 한 번 실행 후 반드시 삭제 =====
-            // 나중에 실제 서버에서도 잘 작동하는지 확인하고 이상하게 돌아가면 이거 다시 켜야 함
-//            MahjongGame debugGame = savedData.getGame(pos);
-//            if (debugGame != null) {
-//                debugGame.matchOverTester(true);
-//                savedData.setDirty();
-//            }
-            // ===== 여기까지 삭제 =====
-
 //            MahjongGame game = RiichiMahjong.ACTIVE_GAMES.computeIfAbsent(pos, p -> new MahjongGame());
             MahjongGame game = savedData.getGame(pos);
             if(game == null || game.isMatchOver()){
