@@ -24,6 +24,10 @@ public class MahjongSavedData extends SavedData {
         return games.get(pos);
     }
 
+    public Map<BlockPos, MahjongGame> getGames(){
+        return games;
+    }
+
     public void setGame(BlockPos pos, MahjongGame game){
         games.put(pos,game);
         setDirty();

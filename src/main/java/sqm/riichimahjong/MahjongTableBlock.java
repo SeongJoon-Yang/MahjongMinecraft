@@ -41,9 +41,13 @@ public class MahjongTableBlock extends Block {
             }
             final MahjongGame finalGame = game;
 
+            // 관전자 시점 어떻게 할거야 일단 0으로 해놔?
             int seat = finalGame.assignSeat(player.getUUID());
-            final int finalSeat = seat < 0 ? -1 : seat;
+            final int finalSeat = seat < 0 ? 0 : seat; // -1로 할지 0으로 할지 고민해보기
             finalGame.switchToSeat(finalSeat);
+
+            if(seat >= 0) finalGame.setSeatAway(seat, false);
+            RiichiMahjong.LOGGER.info("seatAway : {}",game.getSeatAway());
 
             List<Tile> playerHand = game.getHand();
             List<Tile> discardedTiles = game.getDiscarded();
@@ -160,6 +164,11 @@ public class MahjongTableBlock extends Block {
                     int[] riichiDiscardIndexBySeat = finalGame.getRiichiDiscardIndexBySeat();
                     for(int i=0;i<4;i++){
                         buf.writeInt(riichiDiscardIndexBySeat[i]);
+                    }
+
+                    long[] bankLeft = finalGame.getBankLeft();
+                    for(int i=0;i<4;i++){
+                        buf.writeLong(bankLeft[i]);
                     }
 
                     boolean winGameEnd = finalGame.isGameEnd() && finalGame.isWin();

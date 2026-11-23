@@ -6,6 +6,8 @@ import net.minecraft.nbt.ListTag;
 import java.util.*;
 
 public class MahjongGame {
+    public static long serverTick = 0;
+
     private final List<Tile>[] hands = new List[4];
     private final List<Tile>[] discardedBySeat = new List[4];
     private final List<Tile>[] discardHistoryBySeat = new List[4];  // 후리텐 체크용
@@ -20,7 +22,15 @@ public class MahjongGame {
     private boolean[] riichiFuritenBySeat = new boolean[4];
     private boolean[] ippatsuValidBySeat = new boolean[4];
     private final List<Tile>[] kuikaeForbiddenBySeat = new List[4];
+
+    private static final long BASE_TURN_TICKS = 5 * 20L;
+    private static final long BANK_TICKS = 20 * 20L;
+    private long[] bankLeft = new long[4];
+    private long[] deadlineBySeat = new long[]{-1, -1, -1, -1};
+
     private final Map<UUID, Integer> seatAssignment = new HashMap<>();
+    // true : 나감, false : 안나감
+    private boolean[] seatAway = new boolean[]{true, true, true, true};
 
     private final List<Tile> deadWall;
     private final List<Tile> wall;
@@ -155,6 +165,7 @@ public class MahjongGame {
             meldsBySeat[i] = new ArrayList<>();
             meldTypesBySeat[i] = new ArrayList<>();
             kuikaeForbiddenBySeat[i] = new ArrayList<>();
+            bankLeft[i] = 400L;     // 400L인지 20000L인지 확인하기
             riichiDiscardIndexBySeat[i] = -1;
             scoreBySeat[i] = 25000;
             settleScoreBySeat[i] = 0;
@@ -194,7 +205,7 @@ public class MahjongGame {
     }
 
     public Tile drawTile(int seat){
-        // if(canCallCount != 0) return null;   // 콜이 가능하면 콜 먼저 처리하기 위해 뽑지 않는다.
+        RiichiMahjong.LOGGER.info("serverTick : {}",serverTick);
 
         switchToSeat(seat);
 
@@ -226,6 +237,7 @@ public class MahjongGame {
         winningTile = drawn;
 
         tempFuritenBySeat[seat] = false;
+        if(isSeatAssigned(seat)) deadlineBySeat[seat] = serverTick + BASE_TURN_TICKS + bankLeft[seat];
 
         RiichiMahjong.LOGGER.info("drawTile : {}, isRed : {}",drawn.getDisplayName(),drawn.isRed());
 
@@ -278,6 +290,7 @@ public class MahjongGame {
         }
 
         kuikaeForbiddenBySeat[seat].clear();
+        deadlineBySeat[seat] = -1;
 
         return tile;
     }
@@ -2005,11 +2018,15 @@ public class MahjongGame {
 
     public void openCallWindow(){
         RiichiMahjong.LOGGER.info("Call CallWindow");
+        RiichiMahjong.LOGGER.info("serverTick : {}",serverTick);
         int lastDiscarderSeat = lastDiscardOwner;
         for(int seat = 0;seat < 4;seat++){
             chiChoiceIndex[seat] = -1;
             if(seat == lastDiscarderSeat || !hasAnyCall(seat)) callChoices[seat] = CallChoice.NONE;
-            else if(isSeatAssigned(seat)) callChoices[seat] = CallChoice.PENDING;
+            else if(isSeatAssigned(seat)){
+                callChoices[seat] = CallChoice.PENDING;
+                deadlineBySeat[seat] = serverTick + BASE_TURN_TICKS + bankLeft[seat];
+            }
             else callChoices[seat] = CallChoice.PASS;
         }
     }
@@ -2024,6 +2041,7 @@ public class MahjongGame {
         for(int seat = 0;seat < 4;seat++){
             callChoices[seat] = CallChoice.NONE;
             chiChoiceIndex[seat] = -1;
+            deadlineBySeat[seat] = -1;
         }
         RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(callChoices));
     }
@@ -2133,6 +2151,7 @@ public class MahjongGame {
         tag.putIntArray("scoreBySeat",scoreBySeat);
         tag.putIntArray("settleScoreBySeat",settleScoreBySeat);
         tag.putIntArray("riichiDiscardIndexBySeat",riichiDiscardIndexBySeat);
+        tag.putLongArray("bankLeft",bankLeft);
         tag.putIntArray("isDoubleRiichi", doubleRiichiInt);
         tag.putIntArray("isMenzenBySeat", menzenInt);
         tag.putIntArray("isRiichiBySeat", riichiInt);
@@ -2216,6 +2235,8 @@ public class MahjongGame {
         game.scoreBySeat = tag.getIntArray("scoreBySeat");
         game.settleScoreBySeat = tag.getIntArray("settleScoreBySeat");
         game.riichiDiscardIndexBySeat = tag.getIntArray("riichiDiscardIndexBySeat");
+        long[] bankLeftLong = tag.getLongArray("bankLeft");
+        for(int i=0;i<4;i++) game.bankLeft[i] = bankLeftLong.length == 0 ? 400 : bankLeftLong[i];
         int[] doubleRiichiInt = tag.getIntArray("isDoubleRiichi");
         for(int i=0;i<4 && i<doubleRiichiInt.length;i++) game.isDoubleRiichi[i] = doubleRiichiInt[i] == 1;
         int[] menzenInt = tag.getIntArray("isMenzenBySeat");
@@ -2508,6 +2529,17 @@ public class MahjongGame {
         });
     }
 
+    public boolean hasAnyonePresent(){
+        for(int i=0;i<4;i++){
+            if(!seatAway[i]) return true;
+        }
+        return false;
+    }
+
+    public long[] getTurnDeadline(){
+        return deadlineBySeat;
+    }
+
     public List<Tile> getHand() {
         return hand;
     }
@@ -2602,6 +2634,10 @@ public class MahjongGame {
 
     public boolean[] getCallNextRound() { return callNextRound; }
 
+    public boolean[] getSeatAway() { return seatAway; }
+
+    public long[] getBankLeft() { return bankLeft; }
+
     public void setHandMakeUp(boolean handMakeUp) { this.handMakeUp = handMakeUp; }
 
 //    public void resetToPerspective(int seat){
@@ -2632,9 +2668,12 @@ public class MahjongGame {
     public void setCallChoice(int seat, CallChoice choice, int chiIndex) {
         this.callChoices[seat] = choice;
         this.chiChoiceIndex[seat] = chiIndex;
+        deadlineBySeat[seat] = -1;
     }
 
     public void setCallNextRound(int seat) { this.callNextRound[seat] = true; }
+
+    public void setSeatAway(int seat, boolean away) { this.seatAway[seat] = away; }
 
     public boolean declareKyuushuKyuuhai(int seat){
         if(!canDeclareKyuushu(seat)) return false;

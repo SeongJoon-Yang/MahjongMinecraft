@@ -1,15 +1,15 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "tag": "minecraft:planks"
-    },
-    {
-      "item": "minecraft:dirt"
-    }
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "X",
+    "Y"
   ],
+  "key": {
+    "X": { "item": "minecraft:dirt" },
+    "Y": { "tag": "minecraft:planks" }
+  },
   "result": {
     "item": "riichi-mahjong:mahjong_table"
   },
-  "_comment1": "위 레시피는 지금 놀기 위한 임시 레시피임"
+  "_comment1": "placeholder recipe"
 }

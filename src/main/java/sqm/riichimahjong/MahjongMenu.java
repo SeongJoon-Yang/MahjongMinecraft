@@ -34,6 +34,7 @@ public class MahjongMenu extends AbstractContainerMenu {
     private int[] settleScoreBySeat = new int[]{0, 0, 0, 0};
     private boolean[] isRiichi = new boolean[4];
     private int[] riichiDiscardIndexBySeat = new int[]{-1, -1, -1, -1};
+    private long[] bankLeft = new long[4];
 
     private final BlockPos tablePos;
     private boolean handMakeUp = true;
@@ -190,6 +191,10 @@ public class MahjongMenu extends AbstractContainerMenu {
             this.riichiDiscardIndexBySeat[i] = buf.readInt();
         }
 
+        for(int i=0;i<4;i++){
+            this.bankLeft[i] = buf.readLong();
+        }
+
         boolean winGameEnd = buf.readBoolean();
         if(winGameEnd){
             this.lastWinSeat = buf.readInt();
@@ -298,6 +303,8 @@ public class MahjongMenu extends AbstractContainerMenu {
     public int[] getSettleScoreBySeat() { return settleScoreBySeat; }
 
     public int[] getRiichiDiscardIndexBySeat() { return riichiDiscardIndexBySeat; }
+
+    public long[] getBankLeft() { return bankLeft; }
 
     public boolean canTsumo(){ return canTsumo; }
 
@@ -455,6 +462,8 @@ public class MahjongMenu extends AbstractContainerMenu {
         System.arraycopy(uuids, 0, seatUuids, 0, 4);
     }
 
+    public void setBankLeft(long[] bankLeft) { this.bankLeft = bankLeft; }
+
     // 나중에 거리 추가함 이라고 ai가 말했어
     @Override
     public boolean stillValid(Player player) {
@@ -475,9 +484,15 @@ public class MahjongMenu extends AbstractContainerMenu {
         ServerLevel level = (ServerLevel) player.level();
         MahjongSavedData data = MahjongSavedData.get(level);
         MahjongGame game = data.getGame(tablePos);
-        if(game != null && game.releaseSeat(player.getUUID())){   // 대기 상태에서만 true
-            data.setDirty();
-            LobbySync.broadcast(level,tablePos,game);
+        if(game != null){
+            RiichiMahjong.LOGGER.info("test for disconnected");
+            Integer seat = game.getSeatOf(player.getUUID());
+            if(seat != null) game.setSeatAway(seat, true);
+            RiichiMahjong.LOGGER.info("seatAway : {}",game.getSeatAway());
+            if(game.releaseSeat(player.getUUID())) {   // 대기 상태에서만 true
+                data.setDirty();
+                LobbySync.broadcast(level, tablePos, game);
+            }
         }
     }
 }
