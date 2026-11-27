@@ -205,8 +205,6 @@ public class MahjongGame {
     }
 
     public Tile drawTile(int seat){
-        RiichiMahjong.LOGGER.info("serverTick : {}",serverTick);
-
         switchToSeat(seat);
 
         if(gameEnd){
@@ -240,6 +238,7 @@ public class MahjongGame {
         if(isSeatAssigned(seat)) deadlineBySeat[seat] = serverTick + BASE_TURN_TICKS + bankLeft[seat];
 
         RiichiMahjong.LOGGER.info("drawTile : {}, isRed : {}",drawn.getDisplayName(),drawn.isRed());
+        RiichiMahjong.LOGGER.info("fill seat={} tick={} deadline={} bank={}", seat, serverTick, deadlineBySeat[seat], bankLeft[seat]);
 
         return drawn;
     }
@@ -266,6 +265,8 @@ public class MahjongGame {
             if(index != expectedSize - 1) return null;
             if(!hand.get(index).equals(drawnTile)) return null;
         }
+
+        settleTime(seat);
 
         justDrew = false;
 
@@ -309,6 +310,8 @@ public class MahjongGame {
         List<Tile> testHand = new ArrayList<>(hand);
         testHand.remove(discardIndex);
         if(!isTenpai(testHand, seat)) return false;
+
+        settleTime(seat);
 
         Tile discardTile = hand.remove(discardIndex);
         discarded.add(discardTile);
@@ -1439,6 +1442,8 @@ public class MahjongGame {
         winningTile = drawn;
         isRinshan = true;
         turnOrder = seat;
+        if(isSeatAssigned(seat)) deadlineBySeat[seat] = serverTick + BASE_TURN_TICKS + bankLeft[seat];
+        RiichiMahjong.LOGGER.info("fill seat={} tick={} deadline={} bank={}", seat, serverTick, deadlineBySeat[seat], bankLeft[seat]);
     }
 
     public List<List<Integer>> getChiOptionsForSeat(int seat){
@@ -1780,6 +1785,8 @@ public class MahjongGame {
             settleScoreBySeat[seat] = 0;
             riichiDiscardIndexBySeat[seat] = -1;
             callNextRound[seat] = false;
+            bankLeft[seat] = BANK_TICKS;
+            deadlineBySeat[seat] = -1;
         }
 
         kanCount = 0;
@@ -2029,6 +2036,7 @@ public class MahjongGame {
             }
             else callChoices[seat] = CallChoice.PASS;
         }
+        RiichiMahjong.LOGGER.info("tick={} deadline={} bank={}", serverTick, Arrays.toString(deadlineBySeat), Arrays.toString(bankLeft));
     }
 
     public boolean hasPendingCall(){
@@ -2097,6 +2105,12 @@ public class MahjongGame {
             return true;
         }
         return false;
+    }
+
+    public void clearAllDeadlines(){
+        for(int i=0;i<4;i++){
+            deadlineBySeat[i] = -1;
+        }
     }
 
     public CompoundTag toNBT(){
@@ -2536,6 +2550,17 @@ public class MahjongGame {
         return false;
     }
 
+    private void settleTime(int seat){
+        if(deadlineBySeat[seat] == -1) return;
+        RiichiMahjong.LOGGER.info("seat : {}",seat);
+        long remaining = deadlineBySeat[seat] - serverTick;
+        RiichiMahjong.LOGGER.info("tick : {}, deadline : {}, remaining : {}",serverTick, deadlineBySeat[seat], remaining);
+        RiichiMahjong.LOGGER.info("bankLeft(before) : {}",bankLeft[seat]);
+        bankLeft[seat] = Math.max(0, Math.min(bankLeft[seat],remaining));
+        RiichiMahjong.LOGGER.info("bankLeft(after) : {}",bankLeft[seat]);
+        deadlineBySeat[seat] = -1;
+    }
+
     public long[] getTurnDeadline(){
         return deadlineBySeat;
     }
@@ -2666,6 +2691,7 @@ public class MahjongGame {
     public void setDeclareCallCount(int declareCallCount) { this.declareCallCount = declareCallCount; }
 
     public void setCallChoice(int seat, CallChoice choice, int chiIndex) {
+        settleTime(seat);
         this.callChoices[seat] = choice;
         this.chiChoiceIndex[seat] = chiIndex;
         deadlineBySeat[seat] = -1;
@@ -2674,6 +2700,8 @@ public class MahjongGame {
     public void setCallNextRound(int seat) { this.callNextRound[seat] = true; }
 
     public void setSeatAway(int seat, boolean away) { this.seatAway[seat] = away; }
+
+    public void setDeadlineBySeat(int seat, long deadline) { this.deadlineBySeat[seat] = deadline; }
 
     public boolean declareKyuushuKyuuhai(int seat){
         if(!canDeclareKyuushu(seat)) return false;

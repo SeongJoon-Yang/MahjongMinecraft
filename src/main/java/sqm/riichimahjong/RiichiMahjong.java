@@ -609,6 +609,14 @@ public class RiichiMahjong implements ModInitializer {
 		}
 	}
 
+	private static void sendWinGameUpdateToAll(MinecraftServer server, BlockPos pos, MahjongGame game){
+		for(ServerPlayer p : server.getPlayerList().getPlayers()){
+			if(p.containerMenu instanceof MahjongMenu m && m.getTablePos().equals(pos)){
+				sendWinGameUpdate(p,game);
+			}
+		}
+	}
+
 	public static void checkWinAndNotify(net.minecraft.server.level.ServerPlayer player, MahjongGame game) {
 		int seat = game.getSeatOf(player.getUUID());
 		if (game.checkWinCondition(seat)) {
@@ -663,15 +671,19 @@ public class RiichiMahjong implements ModInitializer {
 	}
 
 	private static void tick(ServerLevel world){
-		RiichiMahjong.LOGGER.info("world tick event");
-		long now = world.getGameTime();
-		RiichiMahjong.LOGGER.info("serverTick(now) : {}",now);
+		long now = MahjongGame.serverTick;
+		MinecraftServer server = world.getServer();
 		MahjongSavedData data = MahjongSavedData.get(world);
 		for(Map.Entry<BlockPos, MahjongGame> e : new ArrayList<>(data.getGames().entrySet())){
+			BlockPos pos = e.getKey();
 			MahjongGame game = e.getValue();
 
 			if(game.getGameState() != MahjongGame.GameState.PLAYING) continue;
 			if(!game.hasAnyonePresent()) continue;
+			if(game.isGameEnd()){
+				game.clearAllDeadlines();
+				continue;
+			}
 			boolean line = false;
 			long[] deadline = game.getTurnDeadline();
 			for(int i=0;i<4;i++){
@@ -684,31 +696,45 @@ public class RiichiMahjong implements ModInitializer {
 
 			if(game.hasPendingCall()){
 				CallChoice[] callChoices = game.getCallChoices();
+				int timeOverSeat = -1;
 				for(int i=0;i<4;i++){
 					if (deadline[i] > 0 && now >= deadline[i] && callChoices[i] == CallChoice.PENDING){
 						game.setCallChoice(i,CallChoice.PASS,-1);
 						RiichiMahjong.LOGGER.info("call has passed!");
 						RiichiMahjong.LOGGER.info("serverTick(now) : {}",now);
 						RiichiMahjong.LOGGER.info("seat : {}",i);
+						timeOverSeat = i;
+					}
+				}
+				if(!game.hasPendingCall()){
+					boolean callResolved = game.resolveCalls();
+					if(!callResolved) advanceDummyTurns(game, timeOverSeat, false);
+					data.setDirty();
+					sendGameUpdateToAll(server, pos, game);
+					if(game.isGameEnd() && game.isWin()){
+						 sendWinGameUpdateToAll(server,pos,game);
 					}
 				}
 			}else{
 				int turnSeat = game.getTurnOrder();
 				int handSize = 14 - 3 * game.getMelds().size();		// 문제 생길 수도 있음
 				if (deadline[turnSeat] > 0 && now >= deadline[turnSeat]){
+					RiichiMahjong.LOGGER.info("deadline : {}, now : {}", deadline[turnSeat],now);
 					Tile discarded = game.discardTileAt(turnSeat,handSize - 1);
+					RiichiMahjong.LOGGER.info("discarded : {}, handSize : {}",discarded,handSize);
 					// ai가 쿠이카에 얘기해서 일단 넣어놓음
 					int tryDiscard = handSize - 2;
-					while(discarded == null){
+					while(discarded == null || tryDiscard >= 0){
 						discarded = game.discardTileAt(turnSeat, tryDiscard);
 						tryDiscard--;
 					}
+					game.setDeadlineBySeat(turnSeat, -1);
 					RiichiMahjong.LOGGER.info("tile has discarded!");
 					RiichiMahjong.LOGGER.info("serverTick(now) : {}", now);
 					RiichiMahjong.LOGGER.info("seat : {}", turnSeat);
 					if(game.checkSuukaikanDraw()){
 						data.setDirty();
-						sendGameUpdateToAll(world.getServer(),e.getKey(),game);
+						sendGameUpdateToAll(server,pos,game);
 						return;
 					}
 
@@ -720,7 +746,7 @@ public class RiichiMahjong implements ModInitializer {
 					RiichiMahjong.LOGGER.info("Call Window : {}",java.util.Arrays.toString(game.getCallChoices()));
 
 					data.setDirty();
-					sendGameUpdateToAll(world.getServer(),e.getKey(),game);
+					sendGameUpdateToAll(server,pos,game);
 				}
 			}
 		}
